@@ -2,6 +2,16 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { aiApi } from '../api/ai'
 
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
+type SpeechRecognition = any;
+type SpeechRecognitionEvent = any;
+
 interface UseVoiceAIReturn {
   isListening: boolean
   isProcessing: boolean
@@ -109,9 +119,9 @@ export function useVoiceAI(): UseVoiceAIReturn {
       startAmplitudeTracking()
     }
 
-    recognition.onresult = (event) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const current = Array.from(event.results)
-        .map((r) => r[0].transcript)
+        .map((r: any) => r[0].transcript)
         .join('')
       setTranscript(current)
     }

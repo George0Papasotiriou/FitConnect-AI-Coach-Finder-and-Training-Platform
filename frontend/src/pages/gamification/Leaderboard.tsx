@@ -11,13 +11,13 @@ import Spinner from '../../components/common/Spinner'
 const periods = [
   { value: 'weekly', label: 'This Week' },
   { value: 'monthly', label: 'This Month' },
-  { value: 'all', label: 'All Time' },
-]
+  { value: 'all-time', label: 'All Time' },
+] as const
 
 export default function Leaderboard() {
   const { user } = useAuthStore()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
-  const [period, setPeriod] = useState('weekly')
+  const [period, setPeriod] = useState<'weekly' | 'monthly' | 'all-time'>('weekly')
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
