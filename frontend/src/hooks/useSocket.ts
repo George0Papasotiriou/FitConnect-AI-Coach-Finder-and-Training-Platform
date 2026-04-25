@@ -6,7 +6,7 @@ import { useNotificationStore } from '../store/notificationStore'
 import type { Message } from '../api/chat'
 import type { Notification } from '../api/notification'
 
-const SOCKET_URL = 'http://localhost:3001'
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:3001')
 
 let socketInstance: Socket | null = null
 

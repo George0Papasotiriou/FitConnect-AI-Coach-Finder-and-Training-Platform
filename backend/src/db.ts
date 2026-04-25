@@ -26,8 +26,21 @@ export const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle DB client', err);
+  console.error('❌ Unexpected error on idle DB client:', err.message);
 });
+
+async function testConnection() {
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT 1');
+    console.log('✅ Database connection successful');
+  } catch (err: any) {
+    console.error('❌ Database connection failed:', err.message);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
 const db = {
   async run(sql: string, ...params: any[]): Promise<void> {
@@ -67,6 +80,7 @@ const db = {
 export default db;
 
 export async function initializeDatabase() {
+  await testConnection();
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
