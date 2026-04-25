@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import db from '../db';
+import db from '../db.js';
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
 
