@@ -80,7 +80,7 @@ router.get('/stats', authenticate, requireRole('trainee'), async (req: AuthReque
 
 router.post('/request-coach/:coachId', authenticate, requireRole('trainee'), async (req: AuthRequest, res: Response) => {
   try {
-    const { coachId } = req.params;
+    const coachId = req.params.coachId as string;
     const existing = await db.get("SELECT id FROM coach_requests WHERE trainee_id = ? AND trainer_id = ? AND status = 'pending'", req.user!.id, coachId);
     if (existing) return res.status(400).json({ message: 'Request already pending' });
     const id = uuid();
@@ -94,7 +94,7 @@ router.post('/request-coach/:coachId', authenticate, requireRole('trainee'), asy
 
 router.post('/instant-session/:coachId', authenticate, requireRole('trainee'), async (req: AuthRequest, res: Response) => {
   try {
-    const { coachId } = req.params;
+    const coachId = req.params.coachId as string;
     const id = uuid();
     await db.run("INSERT INTO sessions (id, trainer_id, trainee_id, type, status, scheduled_at) VALUES (?, ?, ?, 'video', 'active', NOW())", id, coachId, req.user!.id);
     await createNotification(coachId, 'session', '📹 Instant Session', `${req.user!.name} wants to workout now!`, `/call/${id}`);
@@ -106,7 +106,7 @@ router.post('/instant-session/:coachId', authenticate, requireRole('trainee'), a
 
 router.post('/schedule-session/:coachId', authenticate, requireRole('trainee'), async (req: AuthRequest, res: Response) => {
   try {
-    const { coachId } = req.params;
+    const coachId = req.params.coachId as string;
     const { date, time, notes } = req.body;
     const id = uuid();
     const scheduledAt = `${date}T${time}:00`;

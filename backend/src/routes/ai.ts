@@ -54,7 +54,7 @@ router.get('/dietary-tip', authenticate, async (req: AuthRequest, res) => {
 
 router.get('/form-tip/:exercise', authenticate, async (req: AuthRequest, res) => {
   try {
-    const tip = await getFormTip(req.params.exercise);
+    const tip = await getFormTip(req.params.exercise as string);
     res.json({ tip });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
