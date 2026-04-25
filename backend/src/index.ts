@@ -42,9 +42,9 @@ const io = new Server(server, {
 });
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ 
-  origin: allowedOrigins.length > 0 ? allowedOrigins : true, 
-  credentials: true 
+app.use(cors({
+  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  credentials: true
 }));
 
 const limiter = rateLimit({
@@ -110,7 +110,7 @@ import { seed } from './seed.js';
   try {
     console.log('🏗️ Starting production server initialization...');
     await initializeDatabase();
-    
+
     const userCount = await db.get('SELECT COUNT(*) as c FROM users') as any;
     if (!userCount || parseInt(userCount.c) === 0) {
       console.log('📦 Empty database detected. Auto-seeding initial data...');
@@ -121,7 +121,7 @@ import { seed } from './seed.js';
 
     // Use Railway's dynamic PORT or default to 8080
     const finalPort = process.env.PORT || 8080;
-    
+
     server.listen(Number(finalPort), '0.0.0.0', () => {
       console.log(`\n🚀 FitConnect API is LIVE on port ${finalPort}`);
       console.log(`🌍 URL: ${process.env.RAILWAY_STATIC_URL || 'Internal Railway Network'}`);
