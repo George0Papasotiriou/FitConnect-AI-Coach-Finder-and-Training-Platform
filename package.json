@@ -5,6 +5,7 @@
     "node": "20.x"
   },
   "scripts": {
-    "build": "echo 'Root build complete'"
+    "build": "cd backend && npm install && npm run build && cd ../frontend && npm install && npm run build && mkdir -p ../backend/dist/public && cp -rv dist/* ../backend/dist/public/",
+    "start": "cd backend && npm start"
   }
 }
