@@ -1,0 +1,10 @@
+{
+  "name": "fitconnect-monorepo",
+  "private": true,
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "build": "echo 'Root build complete'"
+  }
+}
