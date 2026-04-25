@@ -75,12 +75,27 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Request logging for debugging Railway
+app.use((req, _res, next) => {
+  console.log(`📡 ${req.method} ${req.url}`);
+  next();
+});
+
 // Serve frontend in production
 const frontendDist = path.join(__dirname, 'public');
 app.use(express.static(frontendDist));
+
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(frontendDist, 'index.html'));
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  const indexPath = path.join(frontendDist, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('❌ Error sending index.html:', err);
+      res.status(500).send('Frontend build not found. Please check deployment logs.');
+    }
+  });
 });
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
