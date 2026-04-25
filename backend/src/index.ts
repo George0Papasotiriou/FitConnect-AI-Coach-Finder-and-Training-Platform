@@ -123,7 +123,7 @@ import { seed } from './seed.js';
     
     initializeSocket(io);
 
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`\n🚀 SERVER IS LIVE`);
       console.log(`📡 Port: ${PORT}`);
       console.log(`🌐 Origin Allowed: ${cleanOrigin}`);
