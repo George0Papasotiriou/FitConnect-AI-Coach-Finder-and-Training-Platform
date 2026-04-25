@@ -1,0 +1,42 @@
+chat.ts:59
+
+  DB_PREPARE_ERROR('UPDATE conversations SET updatedAt = datetime("now") WHERE id = ?', req.params.id);
+
+  const message = db.get('SELECT m.*, u.name as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON m.senderId = u.id WHERE m.id = ?', id) as any;
+---
+chat.ts:75
+
+  DB_PREPARE_ERROR('UPDATE conversations SET updatedAt = datetime("now") WHERE id = ?', req.params.id);
+
+  const message = db.get('SELECT m.*, u.name as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON m.senderId = u.id WHERE m.id = ?', id) as any;
+---
+chat.ts:101
+  const convId = uuid();
+  DB_PREPARE_ERROR('INSERT INTO conversations (id) VALUES (?)', convId);
+  db.run('INSERT INTO conversation_participants (conversationId, userId) VALUES (?, ?)', convId, req.user!.id);
+  db.run('INSERT INTO conversation_participants (conversationId, userId) VALUES (?, ?)', convId, participantId);
+---
+gamification.ts:52
+
+  const entries = DB_PREPARE_ERROR(`
+    SELECT u.id as userId, u.name, u.avatar, u.xp, u.level,
+    (SELECT COUNT(*) FROM user_achievements ua WHERE ua.userId = u.id AND ua.unlocked = 1) as achievements
+---
+session.ts:85
+  if (revieweeId === session.trainerId) {
+    const stats = DB_PREPARE_ERROR('SELECT AVG(rating) as avg, COUNT(*) as total FROM reviews WHERE revieweeId = ?', session.trainerId) as any;
+    db.run('UPDATE trainer_profiles SET rating = ?, totalReviews = ?, updatedAt = datetime("now") WHERE userId = ?', Math.round(stats.avg * 10) / 10, stats.total, session.trainerId);
+  }
+---
+trainer.ts:111
+
+  DB_PREPARE_ERROR("UPDATE coach_requests SET status = 'accepted', updatedAt = datetime('now') WHERE id = ?", req.params.id);
+  db.run('UPDATE trainee_profiles SET currentCoachId = ?, updatedAt = datetime("now") WHERE userId = ?', req.user!.id, request.traineeId);
+
+---
+trainer.ts:158
+  docs.push(url);
+  DB_PREPARE_ERROR('UPDATE trainer_profiles SET documents = ?, updatedAt = datetime("now") WHERE userId = ?', JSON.stringify(docs), req.user!.id);
+  res.json({ url });
+});
+---
