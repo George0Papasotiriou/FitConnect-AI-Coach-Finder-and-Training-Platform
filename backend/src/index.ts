@@ -108,20 +108,28 @@ import { seed } from './seed.js';
 
 (async () => {
   try {
+    console.log('🏗️ Starting production server initialization...');
     await initializeDatabase();
+    
     const userCount = await db.get('SELECT COUNT(*) as c FROM users') as any;
     if (!userCount || parseInt(userCount.c) === 0) {
       console.log('📦 Empty database detected. Auto-seeding initial data...');
       await seed();
     }
+
     initializeSocket(io);
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`\n🚀 FitConnect API running on port ${PORT}`);
+
+    // Use Railway's dynamic PORT or default to 8080
+    const finalPort = process.env.PORT || 8080;
+    
+    server.listen(Number(finalPort), '0.0.0.0', () => {
+      console.log(`\n🚀 FitConnect API is LIVE on port ${finalPort}`);
+      console.log(`🌍 URL: ${process.env.RAILWAY_STATIC_URL || 'Internal Railway Network'}`);
       console.log(`📡 Socket.IO ready for connections`);
-      console.log(`✅ Database initialized\n`);
+      console.log(`✅ Database initialized and connected\n`);
     });
   } catch (err: any) {
-    console.error('\n\x1b[31mFailed to start server:\x1b[0m', err);
+    console.error('\n\x1b[31m❌ CRITICAL: Failed to start server:\x1b[0m', err);
     process.exit(1);
   }
 })();
