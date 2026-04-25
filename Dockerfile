@@ -28,10 +28,6 @@ RUN mkdir -p /app/backend/uploads
 
 WORKDIR /app/backend
 
-# Install production dependencies only if possible, but for simplicity we'll just use the already built ones
-# or we can do a fresh install:
-# RUN npm install --omit=dev
-
 EXPOSE 3001
 
 CMD ["npm", "start"]
