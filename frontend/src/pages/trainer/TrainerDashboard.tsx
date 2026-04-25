@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom'
 export default function TrainerDashboard() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const [stats, setStats] = useState({ totalClients: 0, sessionsThisWeek: 0, averageRating: 0, earnings: 0 })
+  const [stats, setStats] = useState({ totalClients: 0, sessionsThisWeek: 0, averageRating: 0, earnings: 0, totalReviews: 0 })
   const [clients, setClients] = useState<any[]>([])
   const [sessions, setSessions] = useState<any[]>([])
 

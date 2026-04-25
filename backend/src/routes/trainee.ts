@@ -85,7 +85,7 @@ router.post('/request-coach/:coachId', authenticate, requireRole('trainee'), asy
     if (existing) return res.status(400).json({ message: 'Request already pending' });
     const id = uuid();
     await db.run('INSERT INTO coach_requests (id, trainee_id, trainer_id) VALUES (?, ?, ?)', id, req.user!.id, coachId);
-    await createNotification(coachId as string, 'request', '🔔 New Client Request', `${req.user!.name} wants to train with you!`, '/trainer/clients');
+    await createNotification(coachId, 'request', '🔔 New Client Request', `${req.user!.name} wants to train with you!`, '/trainer/clients');
     res.json({ message: 'Request sent', id });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -97,7 +97,7 @@ router.post('/instant-session/:coachId', authenticate, requireRole('trainee'), a
     const { coachId } = req.params;
     const id = uuid();
     await db.run("INSERT INTO sessions (id, trainer_id, trainee_id, type, status, scheduled_at) VALUES (?, ?, ?, 'video', 'active', NOW())", id, coachId, req.user!.id);
-    await createNotification(coachId as string, 'session', '📹 Instant Session', `${req.user!.name} wants to workout now!`, `/call/${id}`);
+    await createNotification(coachId, 'session', '📹 Instant Session', `${req.user!.name} wants to workout now!`, `/call/${id}`);
     res.json({ sessionId: id });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -111,7 +111,7 @@ router.post('/schedule-session/:coachId', authenticate, requireRole('trainee'), 
     const id = uuid();
     const scheduledAt = `${date}T${time}:00`;
     await db.run("INSERT INTO sessions (id, trainer_id, trainee_id, type, status, scheduled_at, notes) VALUES (?, ?, ?, 'video', 'scheduled', ?, ?)", id, coachId, req.user!.id, scheduledAt, notes || null);
-    await createNotification(coachId as string, 'session', '📅 New Session Booked', `${req.user!.name} scheduled a session on ${date} at ${time}`, '/trainer/sessions');
+    await createNotification(coachId, 'session', '📅 New Session Booked', `${req.user!.name} scheduled a session on ${date} at ${time}`, '/trainer/sessions');
     res.json({ sessionId: id });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
