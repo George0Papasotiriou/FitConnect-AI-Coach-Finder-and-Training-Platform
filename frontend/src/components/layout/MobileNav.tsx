@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Search, MessageCircle, Trophy, User, Bell, Users, Calendar, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Search, MessageCircle, Trophy, User, Bell, Users, CalendarDays, Sparkles, Dumbbell } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useNotificationStore } from '../../store/notificationStore'
 
@@ -10,7 +10,7 @@ export default function MobileNav() {
   const traineeItems = [
     { to: '/trainee/dashboard', icon: <LayoutDashboard size={22} />, label: 'Home' },
     { to: '/search', icon: <Search size={22} />, label: 'Search' },
-    { to: '/ai-trainer', icon: <Sparkles size={22} />, label: 'AI' },
+    { to: '/programs', icon: <Dumbbell size={22} />, label: 'Programs' },
     { to: '/chat', icon: <MessageCircle size={22} />, label: 'Chat' },
     { to: '/leaderboard', icon: <Trophy size={22} />, label: 'Rank' },
   ]
@@ -18,7 +18,7 @@ export default function MobileNav() {
   const trainerItems = [
     { to: '/trainer/dashboard', icon: <LayoutDashboard size={22} />, label: 'Home' },
     { to: '/trainer/clients', icon: <Users size={22} />, label: 'Clients' },
-    { to: '/trainer/sessions', icon: <Calendar size={22} />, label: 'Sessions' },
+    { to: '/trainer/sessions', icon: <CalendarDays size={22} />, label: 'Sessions' },
     { to: '/chat', icon: <MessageCircle size={22} />, label: 'Chat' },
     { to: '/trainer/profile', icon: <User size={22} />, label: 'Profile' }
   ]

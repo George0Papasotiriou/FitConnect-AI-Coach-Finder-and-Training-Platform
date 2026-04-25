@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useWebRTC } from '../../hooks/useWebRTC'
 import CallControls from './CallControls'
@@ -20,6 +20,9 @@ function formatDuration(seconds: number) {
 
 export default function VideoCall({ sessionId, isInitiator, trainerName, onClose }: VideoCallProps) {
   const [showRating, setShowRating] = useState(false)
+  const [isSketchMode, setIsSketchMode] = useState(false)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
 
   const handleCallEnded = () => setShowRating(true)
 
@@ -38,6 +41,51 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
     setShowRating(true)
   }
 
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isSketchMode || !canvasRef.current) return
+    setIsDrawing(true)
+    const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
+    ctx.strokeStyle = '#10b981'
+    ctx.lineWidth = 3
+    ctx.lineCap = 'round'
+    
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = ('touches' in e) ? e.touches[0].clientX - rect.left : (e as React.MouseEvent).clientX - rect.left
+    const y = ('touches' in e) ? e.touches[0].clientY - rect.top : (e as React.MouseEvent).clientY - rect.top
+    
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+  }
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing || !canvasRef.current) return
+    const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
+    
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = ('touches' in e) ? e.touches[0].clientX - rect.left : (e as React.MouseEvent).clientX - rect.left
+    const y = ('touches' in e) ? e.touches[0].clientY - rect.top : (e as React.MouseEvent).clientY - rect.top
+    
+    ctx.lineTo(x, y)
+    ctx.stroke()
+  }
+
+  const stopDrawing = () => setIsDrawing(false)
+
+  const clearCanvas = () => {
+    if (!canvasRef.current) return
+    const ctx = canvasRef.current.getContext('2d')
+    ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+  }
+
+  useEffect(() => {
+    if (isSketchMode && canvasRef.current) {
+      canvasRef.current.width = canvasRef.current.offsetWidth
+      canvasRef.current.height = canvasRef.current.offsetHeight
+    }
+  }, [isSketchMode])
+
   return (
     <>
       <motion.div
@@ -53,6 +101,18 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
             playsInline
             className="w-full h-full object-cover"
             aria-label="Remote video"
+          />
+
+          <canvas
+            ref={canvasRef}
+            className={`absolute inset-0 z-10 w-full h-full pointer-events-${isSketchMode ? 'auto' : 'none'}`}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
           />
 
           {!isConnected && (
@@ -96,9 +156,14 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
             isMuted={isMuted}
             isCameraOff={isCameraOff}
             isScreenSharing={isScreenSharing}
+            isSketchMode={isSketchMode}
             onToggleMute={toggleMute}
             onToggleCamera={toggleCamera}
             onToggleScreenShare={toggleScreenShare}
+            onToggleSketch={() => {
+              if (isSketchMode) clearCanvas()
+              setIsSketchMode(!isSketchMode)
+            }}
             onEndCall={handleEnd}
           />
         </div>

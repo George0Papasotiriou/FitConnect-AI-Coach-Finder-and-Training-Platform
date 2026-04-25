@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import { Send, Sparkles, Dumbbell, Apple, Heart, Zap, RotateCcw, ChevronDown } from 'lucide-react'
 import { aiApi, ChatMessage } from '../../api/ai'
+import StrengthCalculator from '../../components/ai/StrengthCalculator'
+import WorkoutTimer from '../../components/chat/WorkoutTimer'
+import { Award, Timer } from 'lucide-react'
 
 interface UIMessage {
   id: string
@@ -46,13 +49,15 @@ export default function AITrainer() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hey there! 💪 I'm your FitConnect AI Trainer. I can help you with personalised workout plans, nutrition advice, recovery tips, and anything else fitness-related. What would you like to work on today?",
+      content: "Hey there! 💪 I'm your Insta Coach AI Trainer. I can help you with personalised workout plans, nutrition advice, recovery tips, and anything else fitness-related. What would you like to work on today?",
       ts: Date.now(),
     },
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
+  const [showStrengthCalc, setShowStrengthCalc] = useState(false)
+  const [showTimer, setShowTimer] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -123,7 +128,7 @@ export default function AITrainer() {
 
   return (
     <>
-      <Helmet><title>AI Trainer — FitConnect</title></Helmet>
+      <Helmet><title>AI Trainer — Insta Coach</title></Helmet>
 
       <div className="flex flex-col h-[calc(100vh-120px)] max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
@@ -133,17 +138,37 @@ export default function AITrainer() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-text-primary">AI Trainer</h1>
-              <p className="text-xs text-text-secondary">Powered by FitConnect AI · Always available</p>
+              <p className="text-xs text-text-secondary">Powered by Insta Coach AI · Always available</p>
             </div>
           </div>
-          <button
-            onClick={handleClear}
-            className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary px-3 py-1.5 rounded-lg hover:bg-bg-card-hover transition-colors"
-            aria-label="Clear chat"
-          >
-            <RotateCcw size={13} />
-            Clear
-          </button>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowTimer(true)}
+              className="flex items-center gap-1.5 text-xs font-bold text-accent-teal bg-accent-teal/10 border border-accent-teal/20 px-3 py-1.5 rounded-lg hover:bg-accent-teal/20 transition-all shadow-sm"
+            >
+              <Timer size={13} />
+              Timer
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowStrengthCalc(true)}
+              className="flex items-center gap-1.5 text-xs font-bold text-accent-purple bg-accent-purple/10 border border-accent-purple/20 px-3 py-1.5 rounded-lg hover:bg-accent-purple/20 transition-all shadow-sm"
+            >
+              <Award size={13} />
+              Strength Calc
+            </motion.button>
+            <button
+              onClick={handleClear}
+              className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary px-3 py-1.5 rounded-lg hover:bg-bg-card-hover transition-colors"
+              aria-label="Clear chat"
+            >
+              <RotateCcw size={13} />
+              Clear
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 flex-shrink-0">
@@ -228,7 +253,7 @@ export default function AITrainer() {
           {showScrollBtn && (
             <button
               onClick={() => scrollToBottom()}
-              className="absolute bottom-20 right-4 p-2 rounded-full bg-accent-purple text-white shadow-lg hover:bg-purple-600 transition-colors"
+              className="absolute bottom-20 right-4 p-2 rounded-full bg-accent-purple text-white shadow-lg hover:bg-accent-teal/80 transition-colors"
               aria-label="Scroll to bottom"
             >
               <ChevronDown size={16} />
@@ -253,7 +278,7 @@ export default function AITrainer() {
                 whileTap={{ scale: 0.9 }}
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || isLoading}
-                className="p-2.5 bg-accent-purple hover:bg-purple-600 text-white rounded-xl transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
+                className="p-2.5 bg-accent-purple hover:bg-accent-teal/80 text-white rounded-xl transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
                 aria-label="Send message"
               >
                 <Send size={18} />
@@ -265,6 +290,24 @@ export default function AITrainer() {
           </div>
         </div>
       </div>
+
+      <StrengthCalculator 
+        isOpen={showStrengthCalc} 
+        onClose={() => setShowStrengthCalc(false)} 
+      />
+
+      <AnimatePresence>
+        {showTimer && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed bottom-32 right-6 z-40 w-72"
+          >
+            <WorkoutTimer onClose={() => setShowTimer(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

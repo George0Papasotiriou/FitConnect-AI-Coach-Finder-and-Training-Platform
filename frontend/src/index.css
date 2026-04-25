@@ -3,6 +3,30 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-primary: #ffffff;
+    --bg-card: #f8fafc;
+    --bg-card-hover: #f1f5f9;
+    --accent-purple: #10b981; /* Shifted to Insta Coach Green */
+    --accent-teal: #059669; /* Darker Green */
+    --accent-orange: #f59e0b; /* Amber */
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+  }
+
+  .dark {
+    --bg-primary: #0a0a0f;
+    --bg-card: #13131a;
+    --bg-card-hover: #1a1a24;
+    --accent-purple: #10b981; /* Green in dark mode too */
+    --accent-teal: #059669;
+    --accent-orange: #f59e0b;
+    --text-primary: #ffffff;
+    --text-secondary: #9999bb;
+    --border-color: #2a2a3a;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -18,7 +42,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid #6c63ff;
+    outline: 2px solid var(--accent-purple);
     outline-offset: 2px;
   }
 }
@@ -35,11 +59,11 @@
   .glass-card {
     backdrop-filter: blur(20px);
     background: rgba(19, 19, 26, 0.8);
-    border: 1px solid rgba(108, 99, 255, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.2);
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #6c63ff, #00d4aa);
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-teal));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

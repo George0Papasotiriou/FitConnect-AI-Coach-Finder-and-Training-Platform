@@ -94,6 +94,8 @@ export async function initializeDatabase() {
       streak INTEGER DEFAULT 0,
       last_active_date TEXT,
       onboarding_complete INTEGER DEFAULT 0,
+      subscription_active INTEGER DEFAULT 0,
+      free_trial_used INTEGER DEFAULT 0,
       is_banned INTEGER DEFAULT 0,
       ban_reason TEXT,
       created_at TIMESTAMP DEFAULT NOW(),
@@ -113,6 +115,7 @@ export async function initializeDatabase() {
       credentials TEXT DEFAULT '[]',
       documents TEXT DEFAULT '[]',
       is_available INTEGER DEFAULT 1,
+      balance REAL DEFAULT 0,
       application_status TEXT DEFAULT 'pending' CHECK(application_status IN ('pending','approved','rejected')),
       application_notes TEXT,
       reviewed_at TIMESTAMP,
@@ -243,6 +246,89 @@ export async function initializeDatabase() {
       subscription TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS training_programs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL DEFAULT 'My Program',
+      description TEXT DEFAULT '',
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS program_days (
+      id TEXT PRIMARY KEY,
+      program_id TEXT NOT NULL,
+      day_date TEXT NOT NULL,
+      notes TEXT DEFAULT '',
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS program_exercises (
+      id TEXT PRIMARY KEY,
+      day_id TEXT NOT NULL,
+      exercise_name TEXT NOT NULL,
+      exercise_category TEXT NOT NULL,
+      sets INTEGER DEFAULT 3,
+      reps INTEGER DEFAULT 10,
+      duration INTEGER,
+      weight REAL,
+      notes TEXT DEFAULT '',
+      sort_order INTEGER DEFAULT 0,
+      is_custom INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS billing_history (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      amount REAL NOT NULL,
+      currency TEXT DEFAULT 'EUR',
+      type TEXT NOT NULL CHECK(type IN ('payment', 'withdrawal', 'subscription')),
+      status TEXT DEFAULT 'completed' CHECK(status IN ('pending', 'completed', 'failed')),
+      payment_method TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS strength_history (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      exercise TEXT NOT NULL,
+      weight REAL NOT NULL,
+      reps INTEGER NOT NULL,
+      muscle_group TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS bounties (
+      id TEXT PRIMARY KEY,
+      trainer_id TEXT,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      xp_reward INTEGER NOT NULL,
+      exercise_type TEXT NOT NULL,
+      goal_value REAL NOT NULL,
+      expires_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS user_bounties (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      bounty_id TEXT NOT NULL,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'completed', 'failed')),
+      completed_at TIMESTAMP,
+      UNIQUE(user_id, bounty_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS form_analysis (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      video_url TEXT,
+      feedback_json TEXT NOT NULL,
+      score REAL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
   `);
 
   await pool.query(`
@@ -254,5 +340,10 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_coach_requests_trainer ON coach_requests(trainer_id);
     CREATE INDEX IF NOT EXISTS idx_coach_requests_trainee ON coach_requests(trainee_id);
+    CREATE INDEX IF NOT EXISTS idx_training_programs_user ON training_programs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_program_days_program ON program_days(program_id);
+    CREATE INDEX IF NOT EXISTS idx_program_exercises_day ON program_exercises(day_id);
+    CREATE INDEX IF NOT EXISTS idx_strength_history_user ON strength_history(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_bounties_user ON user_bounties(user_id);
   `);
 }

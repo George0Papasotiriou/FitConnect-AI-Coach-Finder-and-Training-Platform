@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
 import { chatApi } from '../../api/chat'
 import { useAuthStore } from '../../store/authStore'
-import ChatList from '../../components/chat/ChatList'
+import { useOnlineStore } from '../../store/onlineStore'
 import ChatWindow from '../../components/chat/ChatWindow'
+import Avatar from '../../components/common/Avatar'
 
 export default function Chat() {
   const { id: conversationId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const { getStatus } = useOnlineStore()
   const [conversations, setConversations] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedConv, setSelectedConv] = useState<string | null>(conversationId || null)
@@ -30,7 +32,7 @@ export default function Chat() {
 
   return (
     <>
-      <Helmet><title>Chat — FitConnect</title></Helmet>
+      <Helmet><title>Chat — Insta Coach</title></Helmet>
       <div className="h-[calc(100vh-120px)] flex rounded-2xl overflow-hidden border border-border-color bg-bg-card">
         {/* Conversation List */}
         <div className={`w-full md:w-80 lg:w-96 border-r border-border-color flex flex-col ${selectedConv ? 'hidden md:flex' : 'flex'}`}>
@@ -39,26 +41,60 @@ export default function Chat() {
               <MessageCircle size={18} className="text-accent-purple" /> Messages
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
             {isLoading ? (
-              <div className="text-center py-8 text-text-secondary text-sm">Loading...</div>
+              <div className="text-center py-8">
+                <div className="w-6 h-6 border-2 border-accent-purple border-t-transparent rounded-full animate-spin mx-auto" />
+              </div>
             ) : conversations.length === 0 ? (
-              <div className="text-center py-8 text-text-secondary text-sm">No conversations yet</div>
+              <div className="text-center py-12 px-4">
+                <div className="w-16 h-16 bg-accent-purple/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <MessageCircle size={24} className="text-accent-purple" />
+                </div>
+                <p className="text-text-secondary text-sm font-medium">No conversations yet</p>
+                <p className="text-text-secondary text-xs mt-1">Find a coach to start chatting</p>
+              </div>
             ) : (
-              conversations.map(conv => {
+              conversations.map((conv, i) => {
                 const otherUser = conv.participants?.find((p: any) => p.id !== user?.id) || { name: 'Unknown' }
+                const otherStatus = otherUser.id ? getStatus(otherUser.id) : 'offline' as const
+                const isActive = selectedConv === conv.id
+
                 return (
-                  <button key={conv.id} onClick={() => handleSelectConversation(conv.id)}
-                    className={`w-full flex items-center gap-3 p-4 hover:bg-bg-card-hover transition-colors text-left ${selectedConv === conv.id ? 'bg-bg-card-hover border-l-2 border-accent-purple' : ''}`}>
-                    <div className="w-10 h-10 rounded-full bg-accent-purple/20 flex items-center justify-center text-accent-purple font-bold text-sm flex-shrink-0">{otherUser.name?.[0]}</div>
+                  <motion.button
+                    key={conv.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    onClick={() => handleSelectConversation(conv.id)}
+                    className={`w-full flex items-center gap-3 p-4 transition-all text-left group ${
+                      isActive
+                        ? 'bg-accent-purple/10 border-l-3 border-accent-purple'
+                        : 'hover:bg-bg-card-hover border-l-3 border-transparent'
+                    }`}
+                  >
+                    <Avatar
+                      src={otherUser.avatar}
+                      name={otherUser.name}
+                      size="md"
+                      status={otherStatus}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="font-semibold text-sm text-text-primary truncate">{otherUser.name}</p>
-                        {conv.unreadCount > 0 && <span className="w-5 h-5 bg-accent-purple text-white text-xs rounded-full flex items-center justify-center">{conv.unreadCount}</span>}
+                        <p className={`font-semibold text-sm truncate ${isActive ? 'text-accent-purple' : 'text-text-primary'}`}>
+                          {otherUser.name}
+                        </p>
+                        {conv.unreadCount > 0 && (
+                          <span className="w-5 h-5 bg-accent-purple text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2">
+                            {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-text-secondary truncate mt-0.5">{conv.lastMessage?.content || 'No messages'}</p>
+                      <p className="text-xs text-text-secondary truncate mt-0.5">
+                        {conv.lastMessage?.content || 'No messages yet'}
+                      </p>
                     </div>
-                  </button>
+                  </motion.button>
                 )
               })
             )}
@@ -67,20 +103,36 @@ export default function Chat() {
 
         {/* Chat Window */}
         <div className={`flex-1 flex flex-col ${selectedConv ? 'flex' : 'hidden md:flex'}`}>
-          {selectedConv && conversations.find(c => c.id === selectedConv) ? (
-            <ChatWindow
-              conversation={conversations.find(c => c.id === selectedConv)!}
-              onBack={() => { setSelectedConv(null); navigate('/chat', { replace: true }) }}
-            />
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-accent-purple/10 rounded-full flex items-center justify-center mx-auto mb-4"><MessageCircle size={28} className="text-accent-purple" /></div>
-                <p className="text-text-secondary font-medium">Select a conversation</p>
-                <p className="text-xs text-text-secondary mt-1">Choose from your existing chats</p>
-              </div>
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {selectedConv && conversations.find(c => c.id === selectedConv) ? (
+              <motion.div
+                key={selectedConv}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 flex flex-col h-full"
+              >
+                <ChatWindow
+                  conversation={conversations.find(c => c.id === selectedConv)!}
+                  onBack={() => { setSelectedConv(null); navigate('/chat', { replace: true }) }}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex-1 flex items-center justify-center"
+              >
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-accent-purple/20 to-accent-teal/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle size={32} className="text-accent-purple" />
+                  </div>
+                  <p className="text-text-primary font-semibold text-lg">Your Messages</p>
+                  <p className="text-text-secondary text-sm mt-1 max-w-xs">Select a conversation to start chatting with your coach or trainee</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </>

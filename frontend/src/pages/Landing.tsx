@@ -4,6 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import { Mic, Video, Trophy, Accessibility, ChevronRight, Star, Zap, Users, Calendar } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import Button from '../components/common/Button'
+import ThemeToggle from '../components/common/ThemeToggle'
 
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0)
@@ -34,7 +35,7 @@ const features = [
 ]
 
 const testimonials = [
-  { name: 'Sarah M.', role: 'Lost 20kg', avatar: '💪', text: 'FitConnect changed my life. My coach is incredible and the gamification keeps me motivated every single day!' },
+  { name: 'Sarah M.', role: 'Lost 20kg', avatar: '💪', text: 'Insta Coach changed my life. My coach is incredible and the gamification keeps me motivated every single day!' },
   { name: 'James K.', role: 'Marathon runner', avatar: '🏃', text: 'The video call quality is amazing. I can train with my coach from another city like they\'re right next to me.' },
   { name: 'Aisha R.', role: 'Yoga enthusiast', avatar: '🧘', text: 'As someone with mobility issues, the accessibility features are thoughtful and genuinely helpful. Thank you!' }
 ]
@@ -44,7 +45,7 @@ export default function Landing() {
 
   return (
     <>
-      <Helmet><title>FitConnect — Find Your Perfect Coach</title></Helmet>
+      <Helmet><title>Insta Coach — Find Your Perfect Coach</title></Helmet>
 
       <div className="min-h-screen bg-bg-primary overflow-x-hidden">
         <a href="#main-content" className="skip-link">Skip to main content</a>
@@ -55,14 +56,15 @@ export default function Landing() {
               <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-lg flex items-center justify-center">
                 <Zap size={16} className="text-white" />
               </div>
-              <span className="font-black text-xl gradient-text">FitConnect</span>
+              <span className="font-black text-xl gradient-text">Insta Coach</span>
             </div>
             <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Features</a>
               <a href="#how-it-works" className="text-sm text-text-secondary hover:text-text-primary transition-colors">How It Works</a>
               <a href="#testimonials" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Reviews</a>
             </nav>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
+              <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Log In</Button>
               <Button size="sm" onClick={() => navigate('/register')}>Get Started</Button>
             </div>
@@ -263,7 +265,7 @@ export default function Landing() {
                   Ready to <span className="gradient-text">Transform?</span>
                 </h2>
                 <p className="text-text-secondary mb-8">
-                  Join thousands of members already achieving their fitness goals with FitConnect.
+                  Join thousands of members already achieving their fitness goals with Insta Coach.
                 </p>
                 <Button size="lg" onClick={() => navigate('/register')} rightIcon={<ChevronRight size={20} />}>
                   Start Your Journey Today
@@ -274,7 +276,7 @@ export default function Landing() {
         </main>
 
         <footer className="border-t border-border-color py-8 px-6 text-center text-sm text-text-secondary" role="contentinfo">
-          <p>© 2024 FitConnect. All rights reserved. Built with ❤️ for healthier lives.</p>
+          <p>© 2024 Insta Coach. All rights reserved. Built with ❤️ for healthier lives.</p>
         </footer>
       </div>
     </>

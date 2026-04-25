@@ -2,8 +2,9 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Search, MessageCircle, Trophy, Star,
-  Settings, Bell, LogOut, Users, Calendar, User,
-  ChevronLeft, ChevronRight, Zap, Sparkles
+  Settings, Bell, LogOut, Users, CalendarDays, User,
+  ChevronLeft, ChevronRight, Zap, Sparkles, Dumbbell, Camera,
+  Brain, Heart, Target, Sun, Globe, Box
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useNotificationStore } from '../../store/notificationStore'
@@ -24,6 +25,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { to: '/trainee/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { to: '/search', icon: <Search size={20} />, label: 'Find Coach' },
     { to: '/my-coach', icon: <User size={20} />, label: 'My Coach' },
+    { to: '/programs', icon: <Dumbbell size={20} />, label: 'My Programs' },
+    { to: '/progress', icon: <Camera size={20} />, label: 'Progress Vault' },
+    { to: '/form-critic', icon: <Brain size={20} />, label: 'Form Critic' },
+    { to: '/recovery', icon: <Heart size={20} />, label: 'Recovery' },
+    { to: '/circadian', icon: <Sun size={20} />, label: 'Body Rhythm' },
+    { to: '/map', icon: <Globe size={20} />, label: 'Sweat Map' },
+    { to: '/virtual-gym', icon: <Box size={20} />, label: 'Virtual Studio' },
+    { to: '/bounties', icon: <Target size={20} />, label: 'Bounties' },
     { to: '/ai-trainer', icon: <Sparkles size={20} />, label: 'AI Trainer' },
     { to: '/chat', icon: <MessageCircle size={20} />, label: 'Messages' },
     { to: '/leaderboard', icon: <Trophy size={20} />, label: 'Leaderboard' },
@@ -33,7 +42,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const trainerNav = [
     { to: '/trainer/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { to: '/trainer/clients', icon: <Users size={20} />, label: 'Clients' },
-    { to: '/trainer/sessions', icon: <Calendar size={20} />, label: 'Sessions' },
+    { to: '/trainer/sessions', icon: <CalendarDays size={20} />, label: 'Sessions' },
     { to: '/trainer/profile', icon: <User size={20} />, label: 'Profile' },
     { to: '/chat', icon: <MessageCircle size={20} />, label: 'Messages' },
     { to: '/leaderboard', icon: <Trophy size={20} />, label: 'Leaderboard' }
@@ -70,7 +79,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-lg flex items-center justify-center">
                 <Zap size={16} className="text-white" />
               </div>
-              <span className="font-black text-lg gradient-text">FitConnect</span>
+              <span className="font-black text-lg gradient-text">Insta Coach</span>
             </motion.div>
           )}
         </AnimatePresence>

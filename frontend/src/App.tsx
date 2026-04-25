@@ -24,6 +24,14 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import ApplicationReview from './pages/admin/ApplicationReview'
 import VoiceOrb from './components/voice/VoiceOrb'
 import AITrainer from './pages/trainee/AITrainer'
+import TrainingPrograms from './pages/trainee/TrainingPrograms'
+import ProgressVisualizer from './pages/trainee/ProgressVisualizer'
+import FormCritic from './pages/trainee/FormCritic'
+import RecoveryDashboard from './pages/trainee/RecoveryDashboard'
+import BountyBoard from './pages/shared/BountyBoard'
+import CircadianOptimizer from './pages/trainee/CircadianOptimizer'
+import CommunityMap from './pages/shared/CommunityMap'
+import VirtualGym from './pages/shared/VirtualGym'
 
 function PrivateRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, token } = useAuthStore()
@@ -107,6 +115,46 @@ export default function App() {
           <Route path="/ai-trainer" element={
             <PrivateRoute roles={['trainee']}>
               <AITrainer />
+            </PrivateRoute>
+          } />
+          <Route path="/programs" element={
+            <PrivateRoute roles={['trainee']}>
+              <TrainingPrograms />
+            </PrivateRoute>
+          } />
+          <Route path="/progress" element={
+            <PrivateRoute roles={['trainee']}>
+              <ProgressVisualizer />
+            </PrivateRoute>
+          } />
+          <Route path="/form-critic" element={
+            <PrivateRoute roles={['trainee']}>
+              <FormCritic />
+            </PrivateRoute>
+          } />
+          <Route path="/recovery" element={
+            <PrivateRoute roles={['trainee']}>
+              <RecoveryDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/bounties" element={
+            <PrivateRoute>
+              <BountyBoard />
+            </PrivateRoute>
+          } />
+          <Route path="/circadian" element={
+            <PrivateRoute roles={['trainee']}>
+              <CircadianOptimizer />
+            </PrivateRoute>
+          } />
+          <Route path="/map" element={
+            <PrivateRoute>
+              <CommunityMap />
+            </PrivateRoute>
+          } />
+          <Route path="/virtual-gym" element={
+            <PrivateRoute>
+              <VirtualGym />
             </PrivateRoute>
           } />
 

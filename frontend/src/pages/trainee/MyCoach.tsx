@@ -27,7 +27,7 @@ export default function MyCoach() {
   if (!profile?.currentCoach) {
     return (
       <>
-        <Helmet><title>My Coach — FitConnect</title></Helmet>
+        <Helmet><title>My Coach — Insta Coach</title></Helmet>
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-20 h-20 bg-accent-purple/10 rounded-full flex items-center justify-center mb-6"><User size={40} className="text-accent-purple" /></div>
           <h1 className="text-2xl font-black text-text-primary mb-2">No Coach Yet</h1>
@@ -49,7 +49,7 @@ export default function MyCoach() {
 
   return (
     <>
-      <Helmet><title>My Coach — FitConnect</title></Helmet>
+      <Helmet><title>My Coach — Insta Coach</title></Helmet>
       <div className="max-w-2xl mx-auto space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-black text-text-primary mb-1">My <span className="gradient-text">Coach</span></h1>

@@ -1,4 +1,4 @@
-# FitConnect — Adaptive Fitness Coaching PWA
+# Insta Coach — Adaptive Fitness Coaching PWA
 
 A full-stack Progressive Web App connecting fitness coaches with trainees. Features real-time chat, video/voice calls, AI-powered coaching tips, gamification, voice-activated navigation, and full accessibility support for users with disabilities.
 

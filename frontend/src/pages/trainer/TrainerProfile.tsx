@@ -57,7 +57,7 @@ export default function TrainerProfile() {
 
   return (
     <>
-      <Helmet><title>My Profile — FitConnect</title></Helmet>
+      <Helmet><title>My Profile — Insta Coach</title></Helmet>
       <div className="max-w-2xl mx-auto space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-black text-text-primary">My <span className="gradient-text">Profile</span></h1>

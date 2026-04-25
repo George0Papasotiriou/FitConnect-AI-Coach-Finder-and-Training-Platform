@@ -161,7 +161,7 @@ export default function TraineeOnboarding() {
 
   return (
     <>
-      <Helmet><title>Set Up Your Profile — FitConnect</title></Helmet>
+      <Helmet><title>Set Up Your Profile — Insta Coach</title></Helmet>
       <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-accent-purple/10 rounded-full blur-[120px]" />

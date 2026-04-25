@@ -8,6 +8,9 @@ import Card from '../../components/common/Card'
 import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import { useNavigate } from 'react-router-dom'
+import apiClient from '../../api/client'
+import { toast } from 'sonner'
+import CheckoutModal from '../../components/payment/CheckoutModal'
 
 export default function TrainerDashboard() {
   const { user } = useAuthStore()
@@ -16,10 +19,16 @@ export default function TrainerDashboard() {
   const [clients, setClients] = useState<any[]>([])
   const [sessions, setSessions] = useState<any[]>([])
 
+  const [showSubscription, setShowSubscription] = useState(false)
+
   useEffect(() => {
     trainerApi.getStats().then(setStats).catch(() => {})
     trainerApi.getClients().then(setClients).catch(() => {})
     trainerApi.getSessions().then(setSessions).catch(() => {})
+    
+    apiClient.get('/billing/info').then(res => {
+      if (!res.data.subscriptionActive) setShowSubscription(true)
+    }).catch(() => {})
   }, [])
 
   const pendingRequests = clients.filter(c => c.status === 'pending')
@@ -29,12 +38,12 @@ export default function TrainerDashboard() {
     { label: 'Active Clients', value: stats.totalClients, icon: <Users size={20} />, color: 'from-accent-purple to-purple-600' },
     { label: 'This Week', value: `${stats.sessionsThisWeek} sessions`, icon: <Calendar size={20} />, color: 'from-accent-teal to-teal-600' },
     { label: 'Rating', value: stats.averageRating.toFixed(1), icon: <Star size={20} />, color: 'from-yellow-500 to-amber-600' },
-    { label: 'Earnings', value: `$${stats.earnings.toLocaleString()}`, icon: <DollarSign size={20} />, color: 'from-green-500 to-emerald-600' },
+    { label: 'Earnings', value: `€${stats.earnings.toLocaleString()}`, icon: <DollarSign size={20} />, color: 'from-green-500 to-emerald-600' },
   ]
 
   return (
     <>
-      <Helmet><title>Trainer Dashboard — FitConnect</title></Helmet>
+      <Helmet><title>Trainer Dashboard — Insta Coach</title></Helmet>
       <div className="space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl md:text-3xl font-black text-text-primary mb-1">
@@ -46,10 +55,19 @@ export default function TrainerDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {statCards.map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-              <Card>
+              <Card className="relative group">
                 <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white mb-3`}>{s.icon}</div>
-                <p className="text-2xl font-black text-text-primary">{s.value}</p>
-                <p className="text-xs text-text-secondary mt-0.5">{s.label}</p>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-2xl font-black text-text-primary">{s.value}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">{s.label}</p>
+                  </div>
+                  {s.label === 'Earnings' && (
+                    <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity !py-1 !px-2 text-[10px]" onClick={() => toast.info('Withdrawal feature coming soon!')}>
+                      Withdraw
+                    </Button>
+                  )}
+                </div>
               </Card>
             </motion.div>
           ))}
@@ -101,6 +119,14 @@ export default function TrainerDashboard() {
           </Card>
         </div>
       </div>
+
+      <CheckoutModal
+        isOpen={showSubscription}
+        onClose={() => {}} // Cannot close without paying
+        onSuccess={() => setShowSubscription(false)}
+        type="subscription"
+        amount={15}
+      />
     </>
   )
 }

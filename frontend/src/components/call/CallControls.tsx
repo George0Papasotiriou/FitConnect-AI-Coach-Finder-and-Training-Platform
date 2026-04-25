@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff } from 'lucide-react'
+import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Pencil } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface CallControlsProps {
@@ -8,11 +8,13 @@ interface CallControlsProps {
   onToggleMute: () => void
   onToggleCamera: () => void
   onToggleScreenShare: () => void
+  onToggleSketch?: () => void
+  isSketchMode?: boolean
   onEndCall: () => void
 }
 
 export default function CallControls({
-  isMuted, isCameraOff, isScreenSharing,
+  isMuted, isCameraOff, isScreenSharing, onToggleSketch, isSketchMode,
   onToggleMute, onToggleCamera, onToggleScreenShare, onEndCall
 }: CallControlsProps) {
   const controlBtn = (
@@ -44,6 +46,7 @@ export default function CallControls({
       {controlBtn(onToggleMute, isMuted ? <MicOff size={22} /> : <Mic size={22} />, isMuted ? 'Unmute' : 'Mute', isMuted)}
       {controlBtn(onToggleCamera, isCameraOff ? <VideoOff size={22} /> : <Video size={22} />, isCameraOff ? 'Turn on camera' : 'Turn off camera', isCameraOff)}
       {controlBtn(onToggleScreenShare, <Monitor size={22} />, isScreenSharing ? 'Stop screen share' : 'Share screen', isScreenSharing)}
+      {onToggleSketch && controlBtn(onToggleSketch, <Pencil size={22} />, isSketchMode ? 'Stop sketching' : 'Start sketching', isSketchMode)}
       {controlBtn(onEndCall, <PhoneOff size={22} />, 'End call', false, true)}
     </div>
   )

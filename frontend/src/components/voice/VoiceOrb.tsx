@@ -65,10 +65,10 @@ export default function VoiceOrb() {
                 <div
                   className="w-40 h-40 rounded-full flex items-center justify-center relative"
                   style={{
-                    background: 'radial-gradient(circle at 40% 35%, #9c96ff, #6c63ff 50%, #00d4aa)',
+                    background: 'radial-gradient(circle at 40% 35%, #34d399, #10b981 50%, #059669)',
                     boxShadow: isListening
-                      ? `0 0 ${40 + amplitude * 60}px rgba(108,99,255,0.8), 0 0 ${80 + amplitude * 100}px rgba(0,212,170,0.4)`
-                      : '0 0 40px rgba(108,99,255,0.4), 0 0 80px rgba(0,212,170,0.2)'
+                      ? `0 0 ${40 + amplitude * 60}px rgba(16,185,129,0.8), 0 0 ${80 + amplitude * 100}px rgba(5,150,105,0.4)`
+                      : '0 0 40px rgba(16,185,129,0.4), 0 0 80px rgba(5,150,105,0.2)'
                   }}
                 >
                   {[1, 2, 3].map((i) => (
@@ -126,7 +126,7 @@ export default function VoiceOrb() {
                     aria-live="polite"
                     aria-atomic="true"
                   >
-                    <p className="text-sm text-accent-purple mb-1 font-medium">FitConnect AI:</p>
+                    <p className="text-sm text-accent-purple mb-1 font-medium">Insta Coach AI:</p>
                     <p className="text-text-primary">{response}</p>
                   </motion.div>
                 )}
@@ -146,8 +146,8 @@ export default function VoiceOrb() {
         whileTap={{ scale: 0.95 }}
         className="fixed bottom-20 right-5 lg:bottom-6 lg:right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
         style={{
-          background: 'linear-gradient(135deg, #6c63ff, #00d4aa)',
-          boxShadow: '0 0 20px rgba(108,99,255,0.5)'
+          background: 'linear-gradient(135deg, #10b981, #059669)',
+          boxShadow: '0 0 20px rgba(16,185,129,0.5)'
         }}
         aria-label="Open Voice AI Assistant"
         aria-expanded={isOpen}

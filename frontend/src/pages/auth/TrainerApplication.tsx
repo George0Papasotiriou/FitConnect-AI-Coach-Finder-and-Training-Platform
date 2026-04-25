@@ -78,7 +78,7 @@ export default function TrainerApplication() {
 
   return (
     <>
-      <Helmet><title>Trainer Application — FitConnect</title></Helmet>
+      <Helmet><title>Trainer Application — Insta Coach</title></Helmet>
       <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
           <div className="glass-card rounded-3xl p-8">

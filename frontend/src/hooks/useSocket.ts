@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '../store/authStore'
 import { useChatStore } from '../store/chatStore'
 import { useNotificationStore } from '../store/notificationStore'
+import { useOnlineStore, UserStatus } from '../store/onlineStore'
 import type { Message } from '../api/chat'
 import type { Notification } from '../api/notification'
 
@@ -14,6 +15,7 @@ export function useSocket() {
   const { token } = useAuthStore()
   const { addMessage, setTyping, updateConversationLastMessage, incrementUnread, activeConversation } = useChatStore()
   const { addNotification } = useNotificationStore()
+  const { setStatus, setMultipleStatuses } = useOnlineStore()
   const socketRef = useRef<Socket | null>(null)
 
   const getSocket = useCallback(() => {
@@ -55,13 +57,45 @@ export function useSocket() {
       addNotification(notification)
     })
 
+    // Online status tracking
+    socket.on('user_online', ({ userId }: { userId: string }) => {
+      setStatus(userId, 'available')
+    })
+
+    socket.on('user_offline', ({ userId }: { userId: string }) => {
+      setStatus(userId, 'offline')
+    })
+
+    socket.on('user_status_change', ({ userId, status }: { userId: string; status: UserStatus }) => {
+      setStatus(userId, status)
+    })
+
+    socket.on('online_users', (users: Record<string, UserStatus>) => {
+      setMultipleStatuses(users)
+    })
+
+    // Request online users on connect
+    socket.on('connect', () => {
+      socket.emit('get_online_users')
+    })
+
+    // Request immediately if already connected
+    if (socket.connected) {
+      socket.emit('get_online_users')
+    }
+
     return () => {
       socket.off('new_message')
       socket.off('typing_start')
       socket.off('typing_stop')
       socket.off('notification')
+      socket.off('user_online')
+      socket.off('user_offline')
+      socket.off('user_status_change')
+      socket.off('online_users')
+      socket.off('connect')
     }
-  }, [token, getSocket, addMessage, setTyping, updateConversationLastMessage, incrementUnread, activeConversation, addNotification])
+  }, [token, getSocket, addMessage, setTyping, updateConversationLastMessage, incrementUnread, activeConversation, addNotification, setStatus, setMultipleStatuses])
 
   const emit = useCallback((event: string, data?: unknown) => {
     const socket = socketRef.current || getSocket()

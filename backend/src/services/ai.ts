@@ -9,7 +9,7 @@ function makeClient(apiKey: string) {
     apiKey,
     defaultHeaders: {
       'HTTP-Referer': 'https://fitconnect.app',
-      'X-Title': 'FitConnect',
+      'X-Title': 'Insta Coach',
     },
   });
 }
@@ -43,7 +43,7 @@ async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Prom
   return '';
 }
 
-const SYSTEM_PROMPT = `You are FitConnect AI, a friendly and knowledgeable fitness assistant inside the FitConnect coaching platform. You help users with:
+const SYSTEM_PROMPT = `You are Insta Coach AI, a friendly and knowledgeable fitness assistant inside the Insta Coach coaching platform. You help users with:
 - Navigating the app (finding coaches, settings, leaderboard, chat, etc.)
 - Fitness advice, workout tips, form guidance
 - Dietary and nutritional tips personalized to fitness goals
@@ -58,6 +58,7 @@ When a user asks to navigate somewhere, respond with a JSON action. For example:
 - "Go to settings" → include action: { "type": "navigate", "payload": "/settings" }
 - "Show leaderboard" → include action: { "type": "navigate", "payload": "/leaderboard" }
 - "AI trainer" → include action: { "type": "navigate", "payload": "/ai-trainer" }
+- "I did 100 on bench for 5" → include action: { "type": "log_pr", "payload": { "exercise": "bench press", "weight": 100, "reps": 5 } }
 
 Keep responses concise, warm, and encouraging. Use fitness-related emoji when appropriate.`;
 

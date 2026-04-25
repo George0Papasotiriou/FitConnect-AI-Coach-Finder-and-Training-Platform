@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useNotificationStore } from '../../store/notificationStore'
 import { useAuthStore } from '../../store/authStore'
 import Avatar from '../common/Avatar'
+import ThemeToggle from '../common/ThemeToggle'
 
 interface TopNavProps {
   sidebarCollapsed: boolean
@@ -31,7 +32,9 @@ export default function TopNav({ sidebarCollapsed }: TopNavProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
+        <ThemeToggle />
+        
         <button
           onClick={() => navigate('/notifications')}
           className="relative p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-card-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
@@ -47,7 +50,7 @@ export default function TopNav({ sidebarCollapsed }: TopNavProps) {
 
         <button
           onClick={() => navigate(user?.role === 'trainer' ? '/trainer/profile' : '/settings')}
-          className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple rounded-xl p-1"
+          className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple rounded-xl p-1 ml-1"
           aria-label="Your profile"
         >
           <Avatar src={user?.avatar} name={user?.name} size="sm" />

@@ -42,7 +42,7 @@ export default function AdminDashboard() {
 
   return (
     <>
-      <Helmet><title>Admin Dashboard — FitConnect</title></Helmet>
+      <Helmet><title>Admin Dashboard — Insta Coach</title></Helmet>
       <div className="space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl md:text-3xl font-black text-text-primary flex items-center gap-2">

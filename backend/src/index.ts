@@ -19,6 +19,11 @@ import gamificationRoutes from './routes/gamification.js';
 import notificationRoutes from './routes/notification.js';
 import adminRoutes from './routes/admin.js';
 import aiRoutes from './routes/ai.js';
+import programRoutes from './routes/programs.js';
+import uploadRoutes from './routes/upload.js';
+import billingRoutes from './routes/billing.js';
+import strengthRoutes from './routes/strength.js';
+import bountyRoutes from './routes/bounties.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -78,7 +83,11 @@ app.use('/api/gamification', gamificationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
-
+app.use('/api/programs', programRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/strength', strengthRoutes);
+app.use('/api/bounties', bountyRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), port: PORT });
 });

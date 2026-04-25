@@ -41,7 +41,7 @@ export default function Login() {
 
   return (
     <>
-      <Helmet><title>Log In — FitConnect</title></Helmet>
+      <Helmet><title>Log In — Insta Coach</title></Helmet>
 
       <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
