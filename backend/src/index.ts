@@ -62,6 +62,17 @@ app.use(cors({
   credentials: true 
 }));
 
+// SUPER-LOGGER: Log everything immediately
+app.use((req, res, next) => {
+  console.log(`[PROXIED REQUEST] ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
+// 1. HEALTH CHECK (MOVE TO TOP)
+app.get('/api/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', environment: 'production' });
+});
+
 // FORCE CACHE INVALIDATION FOR SPA
 app.use((req, res, next) => {
   if (req.url === '/' || req.url.endsWith('.html')) {
@@ -71,6 +82,8 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+
 
 // Simple request logger
 app.use((req, res, next) => {
@@ -101,9 +114,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/strength', strengthRoutes);
 app.use('/api/bounties', bountyRoutes);
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), port: PORT });
-});
+
 
 // 2. STATIC ASSETS
 const frontendDist = path.join(__dirname, 'public');
@@ -146,12 +157,17 @@ import { seed } from './seed.js';
     
     initializeSocket(io);
     
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`\n🚀 SERVER IS LIVE (Version: 1.1.0)`);
+    // Binding to '::' is the most compatible with modern cloud proxies (Railway/AWS/GCP)
+    server.listen(PORT, '::', () => {
+      console.log(`\n🚀 SERVER IS LIVE (Version: 1.1.2)`);
       console.log(`📡 Port: ${PORT}`);
       console.log(`🌐 Origin Allowed: ${cleanOrigin}`);
       console.log(`📂 Serving static files from: ${frontendDist}`);
       console.log('✅ Ready to accept connections\n');
+    });
+
+    server.on('error', (e: any) => {
+      console.error('🔥 SERVER ERROR:', e);
     });
 
     process.on('uncaughtException', (err) => {
