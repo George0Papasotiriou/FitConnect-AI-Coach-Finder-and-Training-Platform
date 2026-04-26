@@ -59,6 +59,16 @@ app.use(cors({
   credentials: true 
 }));
 
+// FORCE CACHE INVALIDATION FOR SPA
+app.use((req, res, next) => {
+  if (req.url === '/' || req.url.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 // Simple request logger
 app.use((req, res, next) => {
   if (!req.url.startsWith('/assets')) {
