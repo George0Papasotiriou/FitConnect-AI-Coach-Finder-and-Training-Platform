@@ -94,6 +94,7 @@ app.get('/api/health', (_req, res) => {
 
 // 2. STATIC ASSETS
 const frontendDist = path.join(__dirname, 'public');
+console.log(`📂 Serving static files from: ${frontendDist}`);
 app.use(express.static(frontendDist));
 
 // 3. WILDCARD SECOND-TO-LAST (Always serves index.html for SPA routing)
