@@ -29,6 +29,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const server = createServer(app);
 
+console.log('--- SYSTEM RESTART DETECTED ---');
+console.log('Timestamp:', new Date().toISOString());
+
 // Get the correct PORT for Railway
 const PORT = Number(process.env.PORT || 3001);
 
@@ -142,12 +145,20 @@ import { seed } from './seed.js';
     }
     
     initializeSocket(io);
-
+    
     server.listen(PORT, '0.0.0.0', () => {
-      console.log(`\n🚀 SERVER IS LIVE`);
+      console.log(`\n🚀 SERVER IS LIVE (Version: 1.1.0)`);
       console.log(`📡 Port: ${PORT}`);
       console.log(`🌐 Origin Allowed: ${cleanOrigin}`);
-      console.log(`✅ Ready to accept connections\n`);
+      console.log(`📂 Serving static files from: ${frontendDist}`);
+      console.log('✅ Ready to accept connections\n');
+    });
+
+    process.on('uncaughtException', (err) => {
+      console.error('🔥 UNCAUGHT EXCEPTION:', err);
+    });
+    process.on('unhandledRejection', (reason) => {
+      console.error('🔥 UNHANDLED REJECTION:', reason);
     });
   } catch (err: any) {
     console.error('\n\x1b[31m❌ FATAL BOOT ERROR:\x1b[0m', err);
