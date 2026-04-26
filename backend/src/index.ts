@@ -157,17 +157,25 @@ import { seed } from './seed.js';
     
     initializeSocket(io);
     
-    // Binding to '::' is the most compatible with modern cloud proxies (Railway/AWS/GCP)
-    server.listen(PORT, '::', () => {
-      console.log(`\n🚀 SERVER IS LIVE (Version: 1.1.2)`);
-      console.log(`📡 Port: ${PORT}`);
+    // Switch back to 0.0.0.0 as some Railway nodes are IPv4-exclusive
+    server.listen(PORT, '0.0.0.0', () => {
+      const address = server.address();
+      const bind = typeof address === 'string' ? 'pipe ' + address : 'port ' + address?.port;
+      
+      console.log(`\n🚀 SERVER IS LIVE (Version: 1.1.3)`);
+      console.log(`📡 Attempting Port: ${PORT}`);
+      console.log(`🏠 Bound to: ${bind}`);
+      console.log(`🏠 Bound Host: ${typeof address === 'string' ? address : address?.address}`);
       console.log(`🌐 Origin Allowed: ${cleanOrigin}`);
       console.log(`📂 Serving static files from: ${frontendDist}`);
       console.log('✅ Ready to accept connections\n');
     });
 
     server.on('error', (e: any) => {
-      console.error('🔥 SERVER ERROR:', e);
+      console.error('🔥 SERVER ERROR (FATAL):', e);
+      if (e.code === 'EADDRINUSE') {
+        console.error('❌ Error: Port', PORT, 'is already in use');
+      }
     });
 
     process.on('uncaughtException', (err) => {
