@@ -68,8 +68,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// 1. HEALTH CHECK (MOVE TO TOP)
-app.get('/api/health', (_req, res) => {
+// 1. HEALTH CHECK (MOVE TO TOP, handle both paths)
+app.get(['/health', '/api/health'], (_req, res) => {
   res.status(200).json({ status: 'ok', environment: 'production' });
 });
 
