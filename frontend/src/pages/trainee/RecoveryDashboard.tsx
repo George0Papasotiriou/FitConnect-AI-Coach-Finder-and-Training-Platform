@@ -4,25 +4,23 @@ import { Helmet } from 'react-helmet-async'
 import { Heart, Zap, Clock, Activity, AlertCircle, Dumbbell, ChevronRight } from 'lucide-react'
 import Card from '../../components/common/Card'
 import { useStrengthStore } from '../../store/strengthStore'
+import { AnatomyFront, AnatomyBack } from '../../components/ai/AnatomyModel'
 
-type MuscleGroup = 'chest' | 'back' | 'shoulders' | 'legs' | 'arms' | 'core'
-
-const MUSCLE_PATHS: Record<MuscleGroup, string> = {
-  chest: "M 45 42 Q 50 40 55 42 Q 55 52 50 55 Q 45 52 45 42",
-  back: "M 45 40 Q 50 38 55 40 Q 60 45 58 60 Q 50 65 42 60 Q 40 45 45 40",
-  shoulders: "M 40 40 Q 35 45 40 50 M 60 40 Q 65 45 60 50",
-  legs: "M 42 65 Q 40 85 45 100 M 58 65 Q 60 85 55 100",
-  arms: "M 38 45 Q 30 60 35 70 M 62 45 Q 70 60 65 70",
-  core: "M 48 55 Q 50 54 52 55 Q 54 65 50 68 Q 46 65 48 55",
-}
+import { MuscleGroup } from '../../components/ai/StrengthCalculator'
 
 const MUSCLE_NAMES: Record<MuscleGroup, string> = {
-  chest: 'Chest / Pectorals',
-  back: 'Back / Lats & Traps',
-  shoulders: 'Shoulders / Delts',
-  legs: 'Legs / Quads & Glutes',
-  arms: 'Arms / Biceps & Triceps',
-  core: 'Core / Abs & Obliques'
+  chest: 'Pectorals',
+  upperBack: 'Lats & Traps',
+  lowerBack: 'Erector Spinae',
+  deltoids: 'Deltoids',
+  biceps: 'Biceps Brachii',
+  triceps: 'Triceps Brachii',
+  forearms: 'Brachioradialis',
+  quads: 'Quadriceps',
+  hamstrings: 'Hamstrings',
+  glutes: 'Gluteus Maximus',
+  calves: 'Gastrocnemius',
+  core: 'Abdominals'
 }
 
 export default function RecoveryDashboard() {
@@ -30,7 +28,8 @@ export default function RecoveryDashboard() {
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null)
 
   const muscleStats = useMemo(() => {
-    return (Object.keys(MUSCLE_PATHS) as MuscleGroup[]).map(m => ({
+    const groups: MuscleGroup[] = ['chest', 'upperBack', 'lowerBack', 'deltoids', 'biceps', 'triceps', 'forearms', 'quads', 'hamstrings', 'glutes', 'calves', 'core']
+    return groups.map(m => ({
       id: m,
       name: MUSCLE_NAMES[m],
       progress: getRecoveryProgress(m),
@@ -43,11 +42,12 @@ export default function RecoveryDashboard() {
      return Math.round(sum / muscleStats.length)
   }, [muscleStats])
 
-  const getHeatColor = (progress: number) => {
-    if (progress >= 90) return 'fill-accent-teal/60'
-    if (progress >= 60) return 'fill-yellow-400/60'
-    if (progress >= 30) return 'fill-orange-400/60'
-    return 'fill-red-500/60'
+  const getRecoveryColor = (m: MuscleGroup): string => {
+    const progress = getRecoveryProgress(m)
+    if (progress >= 90) return '#10b981' // Green
+    if (progress >= 70) return '#fbbf24' // Yellow/Gold
+    if (progress >= 40) return '#f97316' // Orange
+    return '#ef4444' // Red
   }
 
   return (
@@ -116,28 +116,35 @@ export default function RecoveryDashboard() {
                    <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Estimated Recovery Model</p>
                 </div>
                 
-                <div className="w-full max-w-sm aspect-[5/6] relative z-10 py-12">
-                   <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-2xl">
-                    <path d="M 50 15 C 45 15 42 20 42 25 C 42 30 45 35 50 35 C 55 35 58 30 58 25 C 58 20 55 15 50 15 M 40 40 L 60 40 L 65 70 L 55 100 L 45 100 L 35 70 Z" 
-                      className="fill-bg-card-hover" />
-                    
-                    {muscleStats.map(m => (
-                      <motion.path
-                        key={m.id}
-                        d={MUSCLE_PATHS[m.id]}
-                        whileHover={{ scale: 1.05 }}
-                        className={`${getHeatColor(m.progress)} transition-colors duration-700 stroke-bg-primary stroke-[0.5] cursor-pointer`}
-                        onClick={() => setSelectedMuscle(m.id)}
+                <div className="w-full flex-1 flex items-center justify-center min-h-0 relative py-8 px-4">
+                  <div className="h-full flex gap-4 md:gap-12 items-center justify-center">
+                    <div className="h-full max-h-[380px] drop-shadow-2xl">
+                      <AnatomyFront 
+                        getColor={(m) => getRecoveryColor(m)} 
+                        setHoveredMuscle={setSelectedMuscle} 
+                        hoveredMuscle={selectedMuscle} 
                       />
-                    ))}
-                   </svg>
+                    </div>
+                    <div className="h-full max-h-[380px] drop-shadow-2xl">
+                      <AnatomyBack 
+                        getColor={(m) => getRecoveryColor(m)} 
+                        setHoveredMuscle={setSelectedMuscle} 
+                        hoveredMuscle={selectedMuscle} 
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex gap-2 mb-8">
-                   {['Recovered', 'Recovering', 'Fatigued'].map((label, idx) => (
-                     <div key={label} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-bg-primary border border-border-color shadow-sm">
-                        <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-accent-teal' : idx === 1 ? 'bg-yellow-400' : 'bg-red-500'}`} />
-                        <span className="text-[9px] font-black uppercase text-text-secondary">{label}</span>
+                <div className="flex gap-4 flex-wrap justify-center mb-8 px-6">
+                   {[
+                     { label: 'Fresh', color: '#10b981' },
+                     { label: 'Recovering', color: '#fbbf24' },
+                     { label: 'Sore', color: '#f97316' },
+                     { label: 'Fatigued', color: '#ef4444' }
+                   ].map((tier, idx) => (
+                     <div key={tier.label} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-primary border border-border-color shadow-sm">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tier.color, boxShadow: `0 0 8px ${tier.color}40` }} />
+                        <span className="text-[10px] font-black uppercase text-text-secondary tracking-wider">{tier.label}</span>
                      </div>
                    ))}
                 </div>

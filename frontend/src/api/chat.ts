@@ -7,7 +7,7 @@ export interface Message {
   senderName: string
   senderAvatar?: string
   content: string
-  type: 'text' | 'image' | 'file' | 'voice'
+  type: 'text' | 'image' | 'file' | 'voice' | 'program'
   fileUrl?: string
   createdAt: string
   readAt?: string

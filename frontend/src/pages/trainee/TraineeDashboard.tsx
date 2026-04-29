@@ -105,7 +105,7 @@ export default function TraineeDashboard() {
               </div>
 
               <div className="flex gap-3 mt-4">
-                <Button size="lg" className="rounded-2xl flex-1 shadow-lg shadow-accent-purple/20">
+                <Button size="lg" className="rounded-2xl flex-1 shadow-lg shadow-accent-purple/20" onClick={() => navigate('/search')}>
                   <Play size={18} fill="currentColor" className="mr-2" /> Start Workout
                 </Button>
               </div>

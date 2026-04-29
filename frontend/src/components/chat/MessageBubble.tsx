@@ -5,6 +5,7 @@ import { FileText, Download, ExternalLink, Image as ImageIcon, File, CheckCheck,
 import type { Message } from '../../api/chat'
 import { aiApi } from '../../api/ai'
 import Avatar from '../common/Avatar'
+import ProgramMessage from './ProgramMessage'
 
 interface MessageBubbleProps {
   message: Message
@@ -231,7 +232,9 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
               : 'bg-bg-card-hover text-text-primary border border-border-color rounded-bl-sm'
           }`}
         >
-          {isFile ? (
+          {message.type === 'program' ? (
+            <ProgramMessage content={message.content} />
+          ) : isFile ? (
             <FileAttachment message={message} isOwn={isOwn} />
           ) : (
             <RichText content={message.content} isOwn={isOwn} />

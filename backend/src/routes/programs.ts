@@ -30,8 +30,21 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 // Get single program
 router.get('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
-    const program = await db.get('SELECT * FROM training_programs WHERE id = ? AND user_id = ?', req.params.id, req.user!.id);
-    if (!program) return res.status(404).json({ message: 'Program not found' });
+    // Check if user is owner
+    let program = await db.get('SELECT * FROM training_programs WHERE id = ? AND user_id = ?', req.params.id, req.user!.id);
+    
+    // If not owner, check if user is a trainee of the program's owner
+    if (!program) {
+      const progOwner = await db.get('SELECT user_id FROM training_programs WHERE id = ?', req.params.id);
+      if (progOwner) {
+        const isTrainee = await db.get('SELECT id FROM trainee_profiles WHERE user_id = ? AND current_coach_id = ?', req.user!.id, progOwner.userId);
+        if (isTrainee) {
+          program = await db.get('SELECT * FROM training_programs WHERE id = ?', req.params.id);
+        }
+      }
+    }
+
+    if (!program) return res.status(404).json({ message: 'Program not found or access denied' });
 
     const days = await db.all('SELECT * FROM program_days WHERE program_id = ? ORDER BY day_date ASC', program.id);
     const daysWithExercises = await Promise.all(days.map(async (day: any) => {
@@ -87,11 +100,11 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
 
         for (const exercise of (day.exercises || [])) {
           await db.run(
-            'INSERT INTO program_exercises (id, day_id, exercise_name, exercise_category, sets, reps, duration, weight, notes, sort_order, is_custom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO program_exercises (id, day_id, exercise_name, exercise_category, sets, reps, duration, weight, notes, video_url, sort_order, is_custom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             uuid(), dayId, exercise.exerciseName, exercise.exerciseCategory,
             exercise.sets || 3, exercise.reps || 10, exercise.duration || null,
-            exercise.weight || null, exercise.notes || '', exercise.sortOrder || 0,
-            exercise.isCustom ? 1 : 0
+            exercise.weight || null, exercise.notes || '', exercise.videoUrl || null,
+            exercise.sortOrder || 0, exercise.isCustom ? 1 : 0
           );
         }
       }
@@ -125,11 +138,11 @@ router.post('/:id/days', authenticate, async (req: AuthRequest, res) => {
 
     for (const exercise of (exercises || [])) {
       await db.run(
-        'INSERT INTO program_exercises (id, day_id, exercise_name, exercise_category, sets, reps, duration, weight, notes, sort_order, is_custom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO program_exercises (id, day_id, exercise_name, exercise_category, sets, reps, duration, weight, notes, video_url, sort_order, is_custom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         uuid(), dayId, exercise.exerciseName, exercise.exerciseCategory,
         exercise.sets || 3, exercise.reps || 10, exercise.duration || null,
-        exercise.weight || null, exercise.notes || '', exercise.sortOrder || 0,
-        exercise.isCustom ? 1 : 0
+        exercise.weight || null, exercise.notes || '', exercise.videoUrl || null,
+        exercise.sortOrder || 0, exercise.isCustom ? 1 : 0
       );
     }
 
@@ -169,8 +182,8 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
 // Share program with coach via chat
 router.post('/:id/share', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { coachId } = req.body;
-    if (!coachId) return res.status(400).json({ message: 'Coach ID required' });
+    const { recipientId } = req.body;
+    if (!recipientId) return res.status(400).json({ message: 'Recipient ID required' });
 
     const program = await db.get('SELECT * FROM training_programs WHERE id = ? AND user_id = ?', req.params.id, req.user!.id);
     if (!program) return res.status(404).json({ message: 'Program not found' });
@@ -181,42 +194,30 @@ router.post('/:id/share', authenticate, async (req: AuthRequest, res) => {
       return { ...day, exercises: exs };
     }));
 
-    // Create a formatted message
-    let content = `📋 **Training Program: ${program.name}**\n\n`;
-    for (const day of daysWithEx) {
-      content += `📅 ${day.dayDate}\n`;
-      for (const ex of day.exercises) {
-        content += `  • ${ex.exerciseName} — ${ex.sets}×${ex.reps}`;
-        if (ex.weight) content += ` @ ${ex.weight}kg`;
-        content += '\n';
-      }
-      content += '\n';
-    }
-
-    // Find or create conversation with coach
+    // Find or create conversation with recipient
     let conversation = await db.get(`
       SELECT c.id FROM conversations c
       JOIN conversation_participants cp1 ON c.id = cp1.conversation_id AND cp1.user_id = ?
       JOIN conversation_participants cp2 ON c.id = cp2.conversation_id AND cp2.user_id = ?
-    `, req.user!.id, coachId);
+    `, req.user!.id, recipientId);
 
     if (!conversation) {
       const convId = uuid();
       await db.run('INSERT INTO conversations (id) VALUES (?)', convId);
       await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', convId, req.user!.id);
-      await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', convId, coachId);
+      await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', convId, recipientId);
       conversation = { id: convId };
     }
 
-    // Send as message
+    // Send as special program message
     const msgId = uuid();
     await db.run('INSERT INTO messages (id, conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?, ?)',
-      msgId, conversation.id, req.user!.id, content, 'text');
+      msgId, conversation.id, req.user!.id, JSON.stringify({ programId: program.id, name: program.name }), 'program');
     await db.run('UPDATE conversations SET updated_at = NOW() WHERE id = ?', conversation.id);
 
-    // Notify coach
-    await createNotification(coachId, 'message', '📋 Training Program Shared',
-      `${req.user!.name} shared their training program with you!`, `/chat/${conversation.id}`);
+    // Notify recipient
+    await createNotification(recipientId, 'message', '📋 Training Program Shared',
+      `${req.user!.name} shared a workout program: ${program.name}`, `/chat/${conversation.id}`);
 
     res.json({ message: 'Program shared', conversationId: conversation.id });
   } catch (err) {

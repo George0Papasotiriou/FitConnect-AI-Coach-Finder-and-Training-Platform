@@ -169,7 +169,7 @@ router.post('/generate-program', authenticate, async (req: AuthRequest, res) => 
     {
       "dayOfWeek": "Monday",
       "exercises": [
-        { "name": "Exercise Name", "category": "category", "sets": 3, "reps": 10, "notes": "optional notes" }
+        { "name": "Exercise Name", "category": "category", "sets": 3, "reps": 10, "notes": "optional notes", "videoUrl": "youtube_link" }
       ]
     }
   ]
@@ -183,6 +183,7 @@ User profile:
 
 Categories must be one of: Chest, Back, Legs, Shoulders, Arms, Core, Cardio, Sport, Flexibility.
 Include 4-6 exercises per day. Make it realistic and progressive.
+For "videoUrl", provide a real YouTube search link or common tutorial link for the exercise, e.g., "https://www.youtube.com/results?search_query=how+to+do+bench+press" or a direct video link if known.
 Return ONLY valid JSON, no markdown or additional text.`;
 
     const response = await getAIResponse(prompt, 'You are an expert personal trainer. Generate structured workout programs. Return ONLY valid JSON.');
@@ -253,18 +254,30 @@ Return ONLY valid JSON, no markdown or additional text.`;
 
 router.post('/chat', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { message, history = [] } = req.body;
+    const { message, history = [], systemPrompt: customSystemPrompt } = req.body;
     if (!message) return res.status(400).json({ message: 'Message required' });
 
     const user = await db.get('SELECT name, role FROM users WHERE id = ?', req.user!.id);
-    const profile = await db.get('SELECT goals, fitness_level FROM trainee_profiles WHERE user_id = ?', req.user!.id);
-    const goals = profile ? JSON.parse(profile.goals || '[]') : [];
-    const userContext = `User: ${user?.name}. Goals: ${goals.join(', ') || 'not set'}. Fitness level: ${profile?.fitnessLevel || 'not set'}.`;
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const systemPrompt = `You are Insta Coach AI, a knowledgeable, friendly fitness and wellness coach. ${userContext}
-Help with: fitness plans, workout tips, nutrition advice, recovery strategies, motivation, injury prevention, and app features.
-Be warm, specific, and encouraging. Format responses clearly with bullet points where helpful.
-For medical issues, always recommend consulting a healthcare professional.`;
+    let systemPrompt = '';
+    
+    if (user.role === 'trainer') {
+      systemPrompt = `You are a high-level fitness business consultant and master coach. You are advising ${user.name}, a trainer on the Insta Coach platform. 
+      Provide professional, actionable advice on exercise science, client psychological motivation, or business growth.`;
+    } else {
+      const profile = await db.get('SELECT goals, fitness_level FROM trainee_profiles WHERE user_id = ?', req.user!.id);
+      const goals = profile ? JSON.parse(profile.goals || '[]') : [];
+      const userContext = `User: ${user.name}. Goals: ${goals.join(', ') || 'not set'}. Fitness level: ${profile?.fitnessLevel || 'not set'}.`;
+
+      systemPrompt = `You are Insta Coach AI, a knowledgeable, friendly fitness and wellness coach. ${userContext}
+      Help with: fitness plans, workout tips, nutrition advice, recovery strategies, motivation, injury prevention, and app features.
+      Be warm, specific, and encouraging. Format responses clearly with bullet points where helpful.`;
+    }
+
+    if (customSystemPrompt) {
+      systemPrompt = customSystemPrompt;
+    }
 
     const response = await getAIChatResponse(message, history, systemPrompt);
     res.json({ response });

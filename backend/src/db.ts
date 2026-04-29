@@ -138,6 +138,9 @@ export async function initializeDatabase() {
       updated_at TIMESTAMP DEFAULT NOW()
     );
 
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS balance REAL DEFAULT 0;
+
+
     CREATE TABLE IF NOT EXISTS coach_requests (
       id TEXT PRIMARY KEY,
       trainee_id TEXT NOT NULL,
@@ -188,7 +191,7 @@ export async function initializeDatabase() {
       conversation_id TEXT NOT NULL,
       sender_id TEXT NOT NULL,
       content TEXT NOT NULL,
-      type TEXT DEFAULT 'text' CHECK(type IN ('text','image','file','voice')),
+      type TEXT DEFAULT 'text' CHECK(type IN ('text','image','file','voice','program')),
       file_url TEXT,
       read_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT NOW()
@@ -274,6 +277,7 @@ export async function initializeDatabase() {
       duration INTEGER,
       weight REAL,
       notes TEXT DEFAULT '',
+      video_url TEXT,
       sort_order INTEGER DEFAULT 0,
       is_custom INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT NOW()

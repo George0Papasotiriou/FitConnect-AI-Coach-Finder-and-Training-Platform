@@ -9,6 +9,8 @@ const router = Router();
 router.get('/info', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const user = await db.get('SELECT subscription_active, free_trial_used, role FROM users WHERE id = ?', req.user!.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     let balance = 0;
     
     if (user.role === 'trainer') {
@@ -19,12 +21,13 @@ router.get('/info', authenticate, async (req: AuthRequest, res: Response) => {
     const history = await db.all('SELECT * FROM billing_history WHERE user_id = ? ORDER BY created_at DESC', req.user!.id);
     
     res.json({
-      subscriptionActive: !!user.subscription_active,
-      freeTrialUsed: !!user.free_trial_used,
+      subscriptionActive: !!user.subscriptionActive,
+      freeTrialUsed: !!user.freeTrialUsed,
       balance,
       history
     });
   } catch (err) {
+    console.error('Billing info error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
