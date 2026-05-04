@@ -25,6 +25,7 @@ const MUSCLE_NAMES: Record<MuscleGroup, string> = {
 
 export default function RecoveryDashboard() {
   const { getRecoveryProgress, fatigue } = useStrengthStore()
+  const [hoveredMuscle, setHoveredMuscle] = useState<MuscleGroup | null>(null)
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null)
 
   const muscleStats = useMemo(() => {
@@ -121,15 +122,19 @@ export default function RecoveryDashboard() {
                     <div className="h-full max-h-[380px] drop-shadow-2xl">
                       <AnatomyFront 
                         getColor={(m) => getRecoveryColor(m)} 
-                        setHoveredMuscle={setSelectedMuscle} 
-                        hoveredMuscle={selectedMuscle} 
+                        setHoveredMuscle={setHoveredMuscle} 
+                        hoveredMuscle={hoveredMuscle}
+                        onMuscleClick={(m) => setSelectedMuscle(m === selectedMuscle ? null : m)}
+                        selectedMuscle={selectedMuscle}
                       />
                     </div>
                     <div className="h-full max-h-[380px] drop-shadow-2xl">
                       <AnatomyBack 
                         getColor={(m) => getRecoveryColor(m)} 
-                        setHoveredMuscle={setSelectedMuscle} 
-                        hoveredMuscle={selectedMuscle} 
+                        setHoveredMuscle={setHoveredMuscle} 
+                        hoveredMuscle={hoveredMuscle}
+                        onMuscleClick={(m) => setSelectedMuscle(m === selectedMuscle ? null : m)}
+                        selectedMuscle={selectedMuscle}
                       />
                     </div>
                   </div>

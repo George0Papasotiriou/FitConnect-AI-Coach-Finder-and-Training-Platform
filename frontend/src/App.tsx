@@ -32,6 +32,7 @@ import BountyBoard from './pages/shared/BountyBoard'
 import CircadianOptimizer from './pages/trainee/CircadianOptimizer'
 import CommunityMap from './pages/shared/CommunityMap'
 import VirtualGym from './pages/shared/VirtualGym'
+import IncomingCallModal from './components/call/IncomingCallModal'
 
 function PrivateRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, token } = useAuthStore()
@@ -183,6 +184,7 @@ export default function App() {
       </Routes>
 
       {token && user && <VoiceOrb />}
+      <IncomingCallModal />
     </>
   )
 }

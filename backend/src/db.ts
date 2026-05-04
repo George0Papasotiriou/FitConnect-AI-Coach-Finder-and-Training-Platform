@@ -32,6 +32,9 @@ pool.on('error', (err) => {
 async function testConnection() {
   const client = await pool.connect();
   try {
+    const dbUrl = process.env.DATABASE_URL || '';
+    const maskedUrl = dbUrl.replace(/:([^@]+)@/, ':****@');
+    console.log(`📡 Connecting to Database: ${maskedUrl}`);
     await client.query('SELECT 1');
     console.log('✅ Database connection successful');
   } catch (err: any) {
@@ -183,8 +186,11 @@ export async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS conversation_participants (
       conversation_id TEXT NOT NULL,
       user_id TEXT NOT NULL,
+      is_closed BOOLEAN DEFAULT FALSE,
       PRIMARY KEY (conversation_id, user_id)
     );
+
+    ALTER TABLE conversation_participants ADD COLUMN IF NOT EXISTS is_closed BOOLEAN DEFAULT FALSE;
 
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
@@ -195,6 +201,13 @@ export async function initializeDatabase() {
       file_url TEXT,
       read_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS blocked_users (
+      blocker_id TEXT NOT NULL,
+      blocked_id TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (blocker_id, blocked_id)
     );
 
     CREATE TABLE IF NOT EXISTS notifications (

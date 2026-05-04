@@ -51,5 +51,17 @@ export const chatApi = {
     apiClient.post(`/chat/conversations/${conversationId}/read`).then(r => r.data),
 
   createConversation: (participantId: string) =>
-    apiClient.post<Conversation>('/chat/conversations', { participantId }).then(r => r.data)
+    apiClient.post<Conversation>('/chat/conversations', { participantId }).then(r => r.data),
+
+  deleteMessage: (conversationId: string, messageId: string) =>
+    apiClient.delete(`/chat/conversations/${conversationId}/messages/${messageId}`).then(r => r.data),
+
+  blockUser: (userId: string) =>
+    apiClient.post(`/chat/block/${userId}`).then(r => r.data),
+
+  unblockUser: (userId: string) =>
+    apiClient.delete(`/chat/block/${userId}`).then(r => r.data),
+
+  closeConversation: (conversationId: string) =>
+    apiClient.post(`/chat/conversations/${conversationId}/close`).then(r => r.data)
 }

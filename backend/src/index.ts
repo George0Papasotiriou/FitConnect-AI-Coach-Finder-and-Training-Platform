@@ -33,7 +33,7 @@ console.log('--- SYSTEM RESTART DETECTED ---');
 console.log('Timestamp:', new Date().toISOString());
 
 // Get the correct PORT for Railway
-const PORT = Number(process.env.PORT || 3001);
+const PORT = Number(process.env.PORT || 3000);
 
 // Setup CORS Origin - Handle the common trailing slash mistake automatically
 const rawOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';

@@ -39,10 +39,11 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
   }, [])
 
   const createPeer = useCallback((stream: MediaStream) => {
+    if (peerRef.current) return peerRef.current
     const peer = new SimplePeer({
       initiator: isInitiator,
       stream,
-      trickle: false
+      trickle: true
     })
 
     peer.on('signal', (data) => {
@@ -79,9 +80,12 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
   }, [isInitiator, sessionId, emit, onCallEnded])
 
   const startCall = useCallback(async () => {
+    emit('join_session', sessionId)
     const stream = await startLocalStream()
-    createPeer(stream)
-  }, [startLocalStream, createPeer])
+    if (!isInitiator) {
+      createPeer(stream)
+    }
+  }, [emit, sessionId, startLocalStream, createPeer, isInitiator])
 
   const endCall = useCallback(() => {
     peerRef.current?.destroy()
@@ -154,17 +158,39 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
       peerRef.current?.signal(signal)
     })
 
+    const removePeerJoined = on('peer_joined', () => {
+      if (!isInitiator) {
+        emit('peer_ready', { sessionId })
+      } else if (isInitiator && localStreamRef.current) {
+        createPeer(localStreamRef.current)
+      }
+    })
+
+    const removePeerReady = on('peer_ready', () => {
+      if (isInitiator && localStreamRef.current) {
+        createPeer(localStreamRef.current)
+      }
+    })
+
     const removeEnded = on('call_ended', () => {
       endCall()
+    })
+
+    const removeDeclined = on('call_declined', () => {
+      endCall()
+      alert("The other user has declined your call.")
     })
 
     return () => {
       removeOffer()
       removeAnswer()
       removeIce()
+      removePeerJoined()
+      removePeerReady()
       removeEnded()
+      removeDeclined()
     }
-  }, [on, endCall])
+  }, [on, endCall, isInitiator, emit, sessionId, createPeer])
 
   useEffect(() => {
     return () => {

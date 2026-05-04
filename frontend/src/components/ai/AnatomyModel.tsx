@@ -4,25 +4,31 @@ export type MuscleGroup = 'chest' | 'upperBack' | 'lowerBack' | 'deltoids' | 'bi
 
 interface AnatomyProps {
   getColor: (muscle: MuscleGroup) => string;
-  setHoveredMuscle: (m: MuscleGroup | null) => void;
-  hoveredMuscle: MuscleGroup | null;
+  setHoveredMuscle?: (m: MuscleGroup | null) => void;
+  hoveredMuscle?: MuscleGroup | null;
+  onMuscleClick?: (m: MuscleGroup) => void;
+  selectedMuscle?: MuscleGroup | null;
 }
 
-export function AnatomyFront({ getColor, setHoveredMuscle, hoveredMuscle }: AnatomyProps) {
-  const p = (group: MuscleGroup, d: string) => (
-    <path 
-      fill={getColor(group)} 
-      stroke={hoveredMuscle === group ? getColor(group) : 'rgba(255,255,255,0.1)'} 
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-      style={{ opacity: hoveredMuscle === group ? 1 : 0.8, transition: 'all 0.3s', cursor: 'pointer' }}
-      onMouseEnter={() => setHoveredMuscle(group)}
-      onMouseLeave={() => setHoveredMuscle(null)}
-      d={d}
-      transform="translate(-1.25 -2.47)"
-    />
-  );
+export function AnatomyFront({ getColor, setHoveredMuscle, hoveredMuscle, onMuscleClick, selectedMuscle }: AnatomyProps) {
+  const p = (group: MuscleGroup, d: string) => {
+    const isActive = hoveredMuscle === group || selectedMuscle === group;
+    return (
+      <path 
+        fill={getColor(group)} 
+        stroke={isActive ? getColor(group) : 'rgba(255,255,255,0.1)'} 
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        style={{ opacity: isActive ? 1 : 0.8, transition: 'all 0.3s', cursor: 'pointer' }}
+        onMouseEnter={() => setHoveredMuscle && setHoveredMuscle(group)}
+        onMouseLeave={() => setHoveredMuscle && setHoveredMuscle(null)}
+        onClick={() => onMuscleClick && onMuscleClick(group)}
+        d={d}
+        transform="translate(-1.25 -2.47)"
+      />
+    );
+  };
 
   return (
     <svg viewBox="0 0 277.49 495.07" className="w-full h-full">
@@ -60,21 +66,25 @@ export function AnatomyFront({ getColor, setHoveredMuscle, hoveredMuscle }: Anat
   );
 }
 
-export function AnatomyBack({ getColor, setHoveredMuscle, hoveredMuscle }: AnatomyProps) {
-  const p = (group: MuscleGroup, d: string) => (
-    <path 
-      fill={getColor(group)} 
-      stroke={hoveredMuscle === group ? getColor(group) : 'rgba(255,255,255,0.1)'} 
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-      style={{ opacity: hoveredMuscle === group ? 1 : 0.8, transition: 'all 0.3s', cursor: 'pointer' }}
-      onMouseEnter={() => setHoveredMuscle(group)}
-      onMouseLeave={() => setHoveredMuscle(null)}
-      d={d}
-      transform="translate(-1.25 -2.47)"
-    />
-  );
+export function AnatomyBack({ getColor, setHoveredMuscle, hoveredMuscle, onMuscleClick, selectedMuscle }: AnatomyProps) {
+  const p = (group: MuscleGroup, d: string) => {
+    const isActive = hoveredMuscle === group || selectedMuscle === group;
+    return (
+      <path 
+        fill={getColor(group)} 
+        stroke={isActive ? getColor(group) : 'rgba(255,255,255,0.1)'} 
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        style={{ opacity: isActive ? 1 : 0.8, transition: 'all 0.3s', cursor: 'pointer' }}
+        onMouseEnter={() => setHoveredMuscle && setHoveredMuscle(group)}
+        onMouseLeave={() => setHoveredMuscle && setHoveredMuscle(null)}
+        onClick={() => onMuscleClick && onMuscleClick(group)}
+        d={d}
+        transform="translate(-1.25 -2.47)"
+      />
+    );
+  };
 
   return (
     <svg viewBox="0 0 277.49 495.07" className="w-full h-full">

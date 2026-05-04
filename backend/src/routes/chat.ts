@@ -9,10 +9,14 @@ const router = Router();
 router.get('/conversations', authenticate, async (req: AuthRequest, res) => {
   try {
     const conversations = await db.all(`
-      SELECT c.*, cp2.user_id as other_user_id FROM conversations c
-      JOIN conversation_participants cp1 ON c.id = cp1.conversation_id AND cp1.user_id = ?
-      JOIN conversation_participants cp2 ON c.id = cp2.conversation_id AND cp2.user_id != ?
-      ORDER BY c.updated_at DESC
+      SELECT * FROM (
+        SELECT DISTINCT ON (cp2.user_id) c.*, cp2.user_id as other_user_id, cp1.is_closed
+        FROM conversations c
+        JOIN conversation_participants cp1 ON c.id = cp1.conversation_id AND cp1.user_id = ?
+        JOIN conversation_participants cp2 ON c.id = cp2.conversation_id AND cp2.user_id != ?
+        WHERE cp1.is_closed = FALSE
+        ORDER BY cp2.user_id, c.updated_at DESC
+      ) t ORDER BY updated_at DESC
     `, req.user!.id, req.user!.id);
 
     const result = await Promise.all(conversations.map(async conv => {
@@ -57,6 +61,19 @@ router.get('/conversations/:id/messages', authenticate, async (req: AuthRequest,
   }
 });
 
+router.delete('/conversations/:id/messages/:messageId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const msg = await db.get('SELECT sender_id FROM messages WHERE id = ? AND conversation_id = ?', req.params.messageId, req.params.id);
+    if (!msg) return res.status(404).json({ message: 'Message not found' });
+    if (msg.senderId !== req.user!.id) return res.status(403).json({ message: 'Not authorized to delete' });
+
+    await db.run('DELETE FROM messages WHERE id = ?', req.params.messageId);
+    res.json({ message: 'Message deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.post('/conversations/:id/messages', authenticate, async (req: AuthRequest, res) => {
   try {
     const { content, type = 'text' } = req.body;
@@ -65,6 +82,7 @@ router.post('/conversations/:id/messages', authenticate, async (req: AuthRequest
     const id = uuid();
     await db.run('INSERT INTO messages (id, conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?, ?)', id, req.params.id, req.user!.id, content, type);
     await db.run('UPDATE conversations SET updated_at = NOW() WHERE id = ?', req.params.id);
+    await db.run('UPDATE conversation_participants SET is_closed = FALSE WHERE conversation_id = ?', req.params.id);
 
     const message = await db.get('SELECT m.*, u.name as sender_name, u.avatar as sender_avatar FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', id);
     res.json(message);
@@ -84,9 +102,19 @@ router.post('/conversations/:id/files', authenticate, uploadChatFile.single('fil
 
     await db.run('INSERT INTO messages (id, conversation_id, sender_id, content, type, file_url) VALUES (?, ?, ?, ?, ?, ?)', id, req.params.id, req.user!.id, req.file.originalname, type, fileUrl);
     await db.run('UPDATE conversations SET updated_at = NOW() WHERE id = ?', req.params.id);
+    await db.run('UPDATE conversation_participants SET is_closed = FALSE WHERE conversation_id = ?', req.params.id);
 
     const message = await db.get('SELECT m.*, u.name as sender_name, u.avatar as sender_avatar FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', id);
     res.json(message);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/conversations/:id/close', authenticate, async (req: AuthRequest, res) => {
+  try {
+    await db.run('UPDATE conversation_participants SET is_closed = TRUE WHERE conversation_id = ? AND user_id = ?', req.params.id, req.user!.id);
+    res.json({ message: 'Conversation closed' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -122,6 +150,27 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res) => {
     res.json({ id: convId });
   } catch (err) {
     console.error('Create conversation error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/block/:id', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const existing = await db.get('SELECT 1 FROM blocked_users WHERE blocker_id = ? AND blocked_id = ?', req.user!.id, req.params.id);
+    if (!existing) {
+      await db.run('INSERT INTO blocked_users (blocker_id, blocked_id) VALUES (?, ?)', req.user!.id, req.params.id);
+    }
+    res.json({ message: 'User blocked' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.delete('/block/:id', authenticate, async (req: AuthRequest, res) => {
+  try {
+    await db.run('DELETE FROM blocked_users WHERE blocker_id = ? AND blocked_id = ?', req.user!.id, req.params.id);
+    res.json({ message: 'User unblocked' });
+  } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 });

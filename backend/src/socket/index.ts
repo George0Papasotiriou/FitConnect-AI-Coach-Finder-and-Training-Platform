@@ -67,8 +67,17 @@ export function initializeSocket(io: Server) {
     // Call status tracking
     socket.on('join_session', (sessionId: string) => {
       socket.join(`session:${sessionId}`);
+      socket.to(`session:${sessionId}`).emit('peer_joined');
       userStatuses.set(userId, 'in-call');
       io.emit('user_status_change', { userId, status: 'in-call' });
+    });
+
+    socket.on('peer_ready', (data: { sessionId: string }) => {
+      socket.to(`session:${data.sessionId}`).emit('peer_ready');
+    });
+
+    socket.on('call_declined', (data: { sessionId: string }) => {
+      socket.to(`session:${data.sessionId}`).emit('call_declined');
     });
 
     socket.on('call_ended', (data: { sessionId: string }) => {
@@ -90,12 +99,26 @@ export function initializeSocket(io: Server) {
       socket.to(`session:${data.sessionId}`).emit('webrtc_ice_candidate', { signal: data.signal, from: userId });
     });
 
-    // Coach matching events
     socket.on('coach_match_accept', (data: { traineeId: string; trainerId: string }) => {
       const traineeSocket = onlineUsers.get(data.traineeId);
       if (traineeSocket) {
         io.to(traineeSocket).emit('match_accepted', { trainerId: data.trainerId });
       }
+    });
+
+    socket.on('incoming_call', (data: { targetUserId: string; conversationId: string; callerName: string; type: string }) => {
+      const targetSocket = onlineUsers.get(data.targetUserId);
+      if (targetSocket) {
+        io.to(targetSocket).emit('incoming_call', {
+          conversationId: data.conversationId,
+          callerName: data.callerName,
+          type: data.type
+        });
+      }
+    });
+
+    socket.on('mark_read', (data: { conversationId: string }) => {
+      socket.to(`conv:${data.conversationId}`).emit('messages_read', { conversationId: data.conversationId, userId });
     });
 
     socket.on('notification', (data: { userId: string; notification: any }) => {

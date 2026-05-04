@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useWebRTC } from '../../hooks/useWebRTC'
 import CallControls from './CallControls'
 import PostCallRating from './PostCallRating'
+import AICallAssistant from './AICallAssistant'
 import { format } from 'date-fns'
 
 interface VideoCallProps {
@@ -10,6 +11,7 @@ interface VideoCallProps {
   isInitiator: boolean
   trainerName: string
   onClose: () => void
+  isAdhoc?: boolean
 }
 
 function formatDuration(seconds: number) {
@@ -18,13 +20,17 @@ function formatDuration(seconds: number) {
   return `${m}:${s}`
 }
 
-export default function VideoCall({ sessionId, isInitiator, trainerName, onClose }: VideoCallProps) {
+export default function VideoCall({ sessionId, isInitiator, trainerName, onClose, isAdhoc }: VideoCallProps) {
   const [showRating, setShowRating] = useState(false)
   const [isSketchMode, setIsSketchMode] = useState(false)
+  const [showAI, setShowAI] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
 
-  const handleCallEnded = () => setShowRating(true)
+  const handleCallEnded = () => {
+    if (isAdhoc) onClose()
+    else setShowRating(true)
+  }
 
   const {
     localVideoRef, remoteVideoRef,
@@ -38,7 +44,6 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
 
   const handleEnd = () => {
     endCall()
-    setShowRating(true)
   }
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
@@ -164,10 +169,16 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
               if (isSketchMode) clearCanvas()
               setIsSketchMode(!isSketchMode)
             }}
+            onToggleAI={() => setShowAI(!showAI)}
+            isAIActive={showAI}
             onEndCall={handleEnd}
           />
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {showAI && <AICallAssistant onClose={() => setShowAI(false)} />}
+      </AnimatePresence>
 
       <PostCallRating
         isOpen={showRating}

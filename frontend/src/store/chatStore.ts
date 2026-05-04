@@ -14,6 +14,8 @@ interface ChatStore {
   updateConversationLastMessage: (conversationId: string, message: Message) => void
   incrementUnread: (conversationId: string) => void
   clearUnread: (conversationId: string) => void
+  setMessagesRead: (conversationId: string, userId: string) => void
+  removeConversation: (conversationId: string) => void
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -63,5 +65,21 @@ export const useChatStore = create<ChatStore>((set) => ({
       conversations: state.conversations.map((c) =>
         c.id === conversationId ? { ...c, unreadCount: 0 } : c
       )
+    })),
+
+  setMessagesRead: (conversationId, userId) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: (state.messages[conversationId] || []).map((m) =>
+          m.senderId === userId ? { ...m, readAt: new Date().toISOString() } : m
+        )
+      }
+    })),
+
+  removeConversation: (id) =>
+    set((state) => ({
+      conversations: state.conversations.filter((c) => c.id !== id),
+      activeConversation: state.activeConversation === id ? null : state.activeConversation
     }))
 }))

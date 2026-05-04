@@ -1,8 +1,10 @@
 import { useState, useEffect, memo } from 'react'
 import { format } from 'date-fns'
 import { motion } from 'framer-motion'
-import { FileText, Download, ExternalLink, Image as ImageIcon, File, CheckCheck, Check } from 'lucide-react'
+import { FileText, Download, ExternalLink, Image as ImageIcon, File, CheckCheck, Check, Trash2 } from 'lucide-react'
 import type { Message } from '../../api/chat'
+import { chatApi } from '../../api/chat'
+import { useChatStore } from '../../store/chatStore'
 import { aiApi } from '../../api/ai'
 import Avatar from '../common/Avatar'
 import ProgramMessage from './ProgramMessage'
@@ -210,21 +212,58 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   const time = format(new Date(message.createdAt), 'HH:mm')
   const isFile = (message.type === 'image' || message.type === 'file') && message.fileUrl
   const urls = !isFile ? extractUrls(message.content) : []
+  const { setMessages, conversations } = useChatStore()
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      await chatApi.deleteMessage(message.conversationId, message.id)
+      const convMsgs = useChatStore.getState().messages[message.conversationId] || []
+      useChatStore.getState().setMessages(
+        message.conversationId,
+        convMsgs.filter(m => m.id !== message.id)
+      )
+    } catch (error) {
+      console.error('Failed to delete message', error)
+      setIsDeleting(false)
+    }
+  }
+
+  if (isDeleting) {
+    return (
+      <motion.div
+        animate={{ opacity: 0, scale: 0.8, height: 0, margin: 0 }}
+        transition={{ duration: 0.3 }}
+      />
+    )
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+      className={`flex items-end gap-2 group ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
     >
       {!isOwn && (
         <Avatar src={message.senderAvatar} name={message.senderName} size="xs" />
       )}
-      <div className={`max-w-[70%] space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
+      <div className={`max-w-[70%] space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col relative`}>
         {!isOwn && (
           <span className="text-xs text-text-secondary px-1">{message.senderName}</span>
         )}
+        
+        {isOwn && (
+          <button
+            onClick={handleDelete}
+            className="absolute top-1/2 -translate-y-1/2 -left-10 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-text-secondary hover:text-red-500 bg-surface-dark rounded-full shadow-lg"
+            title="Delete message"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+
         <div
           className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
             isOwn

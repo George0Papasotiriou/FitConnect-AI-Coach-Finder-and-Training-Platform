@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Paperclip, Phone, Video, ArrowLeft, Image as ImageIcon } from 'lucide-react'
+import { Send, Paperclip, Phone, Video, ArrowLeft, Image as ImageIcon, Ban, Timer, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useChatStore } from '../../store/chatStore'
@@ -11,7 +11,6 @@ import MessageBubble from './MessageBubble'
 import TypingIndicator from './TypingIndicator'
 import Avatar from '../common/Avatar'
 import WorkoutTimer from './WorkoutTimer'
-import { Award, Timer } from 'lucide-react'
 import type { Conversation } from '../../api/chat'
 
 interface ChatWindowProps {
@@ -25,14 +24,15 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const [isSending, setIsSending] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [showTimer, setShowTimer] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { user } = useAuthStore()
-  const { messages, typingUsers, addMessage, clearUnread } = useChatStore()
+  const { messages, typingUsers, addMessage, clearUnread, setMessagesRead, removeConversation } = useChatStore()
   const { getStatus } = useOnlineStore()
-  const { emit } = useSocket()
+  const { emit, on } = useSocket()
   const navigate = useNavigate()
 
   const conversationMessages = messages[conversation.id] || []
@@ -47,13 +47,37 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   useEffect(() => {
     clearUnread(conversation.id)
     chatApi.markAsRead(conversation.id).catch(() => {})
-  }, [conversation.id, clearUnread])
+    emit('mark_read', { conversationId: conversation.id })
+  }, [conversation.id, clearUnread, emit])
 
   useEffect(() => {
     chatApi.getMessages(conversation.id).then((msgs) => {
       useChatStore.getState().setMessages(conversation.id, msgs)
     }).catch(() => {})
   }, [conversation.id])
+
+  useEffect(() => {
+    // Listen for read receipts
+    const removeMarkRead = on('messages_read', (data: any) => {
+      if (data.conversationId === conversation.id) {
+        setMessagesRead(conversation.id, data.userId)
+      }
+    })
+
+    return () => {
+      removeMarkRead()
+    }
+  }, [conversation.id, on, setMessagesRead])
+
+  const handleCloseConversation = async () => {
+    try {
+      await chatApi.closeConversation(conversation.id)
+      removeConversation(conversation.id)
+      if (onBack) onBack()
+    } catch (error) {
+      console.error('Failed to close conversation', error)
+    }
+  }
 
   const handleTyping = useCallback(() => {
     emit('typing_start', { conversationId: conversation.id })
@@ -108,6 +132,21 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     } catch {}
   }
 
+  const handleBlockToggle = async () => {
+    if (!other?.id) return
+    try {
+      if (isBlocked) {
+        await chatApi.unblockUser(other.id)
+        setIsBlocked(false)
+      } else {
+        await chatApi.blockUser(other.id)
+        setIsBlocked(true)
+      }
+    } catch (e) {
+      console.error('Failed to toggle block status')
+    }
+  }
+
   const statusText = otherStatus === 'available' ? 'Online' : otherStatus === 'in-call' ? 'In a call' : 'Offline'
   const statusDotColor = otherStatus === 'available' ? 'bg-green-500' : otherStatus === 'in-call' ? 'bg-red-500' : 'bg-gray-500'
 
@@ -143,6 +182,24 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleBlockToggle}
+            className={`p-2.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${isBlocked ? 'text-red-500 bg-red-500/10' : 'text-text-secondary hover:text-red-500 hover:bg-red-500/10'}`}
+            title={isBlocked ? "Unblock user" : "Block user"}
+          >
+            <Ban size={20} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleCloseConversation}
+            className="p-2.5 rounded-xl text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            title="Close chat"
+          >
+            <X size={20} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowTimer(!showTimer)}
             className={`p-2.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple ${showTimer ? 'text-accent-teal bg-accent-teal/10 font-bold' : 'text-text-secondary hover:text-accent-teal hover:bg-accent-teal/10'}`}
             aria-label="Toggle workout timer"
@@ -153,7 +210,10 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate(`/call/${conversation.id}?audio=true`)}
+            onClick={() => {
+              emit('incoming_call', { targetUserId: other?.id, conversationId: conversation.id, callerName: user?.name, type: 'audio' })
+              navigate(`/call/${conversation.id}?type=chat&audio=true&name=${encodeURIComponent(other?.name || 'User')}`)
+            }}
             className="p-2.5 rounded-xl text-text-secondary hover:text-accent-teal hover:bg-accent-teal/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
             aria-label="Start audio call"
           >
@@ -162,7 +222,10 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate(`/call/${conversation.id}`)}
+            onClick={() => {
+              emit('incoming_call', { targetUserId: other?.id, conversationId: conversation.id, callerName: user?.name, type: 'video' })
+              navigate(`/call/${conversation.id}?type=chat&name=${encodeURIComponent(other?.name || 'User')}`)
+            }}
             className="p-2.5 rounded-xl text-text-secondary hover:text-accent-purple hover:bg-accent-purple/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
             aria-label="Start video call"
           >

@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Pencil } from 'lucide-react'
+import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Pencil, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface CallControlsProps {
@@ -10,11 +10,14 @@ interface CallControlsProps {
   onToggleScreenShare: () => void
   onToggleSketch?: () => void
   isSketchMode?: boolean
+  onToggleAI?: () => void
+  isAIActive?: boolean
   onEndCall: () => void
 }
 
 export default function CallControls({
   isMuted, isCameraOff, isScreenSharing, onToggleSketch, isSketchMode,
+  onToggleAI, isAIActive,
   onToggleMute, onToggleCamera, onToggleScreenShare, onEndCall
 }: CallControlsProps) {
   const controlBtn = (
@@ -47,6 +50,7 @@ export default function CallControls({
       {controlBtn(onToggleCamera, isCameraOff ? <VideoOff size={22} /> : <Video size={22} />, isCameraOff ? 'Turn on camera' : 'Turn off camera', isCameraOff)}
       {controlBtn(onToggleScreenShare, <Monitor size={22} />, isScreenSharing ? 'Stop screen share' : 'Share screen', isScreenSharing)}
       {onToggleSketch && controlBtn(onToggleSketch, <Pencil size={22} />, isSketchMode ? 'Stop sketching' : 'Start sketching', isSketchMode)}
+      {onToggleAI && controlBtn(onToggleAI, <Zap size={22} className={isAIActive ? "text-accent-teal" : ""} />, isAIActive ? 'Hide AI Assistant' : 'Show AI Assistant', isAIActive)}
       {controlBtn(onEndCall, <PhoneOff size={22} />, 'End call', false, true)}
     </div>
   )
