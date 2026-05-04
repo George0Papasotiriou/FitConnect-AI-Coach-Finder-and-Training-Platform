@@ -17,9 +17,22 @@ function parameterize(sql: string): string {
   return sql.replace(/\?/g, () => `$${++i}`);
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+const databaseUrl = process.env.DATABASE_URL;
+
+if (isProduction && !databaseUrl && !process.env.PGHOST) {
+  console.error('❌ CRITICAL: No database configuration found in production!');
+}
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL?.includes('railway.internal') ? { rejectUnauthorized: false } : false,
+  connectionString: databaseUrl,
+  // Fallbacks for individual variables if connectionString is missing
+  user: process.env.PGUSER,
+  host: process.env.PGHOST,
+  database: process.env.PGDATABASE,
+  password: process.env.PGPASSWORD,
+  port: Number(process.env.PGPORT || 5432),
+  ssl: isProduction && !databaseUrl?.includes('railway.internal') ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
@@ -34,8 +47,12 @@ async function testConnection() {
   try {
     const dbUrl = process.env.DATABASE_URL || '';
     const maskedUrl = dbUrl.replace(/:([^@]+)@/, ':****@');
-    console.log(`📡 Connecting to Database: ${maskedUrl}`);
-    await client.query('SELECT 1');
+    console.log(`📡 Connecting to Database: ${maskedUrl || process.env.PGHOST || 'localhost'}`);
+    
+    const result = await client.query('SELECT current_database(), current_user, inet_server_addr()');
+    const { current_database, current_user, inet_server_addr } = result.rows[0];
+    
+    console.log(`✅ Connected to DB: ${current_database} as User: ${current_user} (Server IP: ${inet_server_addr})`);
     console.log('✅ Database connection successful');
   } catch (err: any) {
     console.error('❌ Database connection failed:', err.message);
