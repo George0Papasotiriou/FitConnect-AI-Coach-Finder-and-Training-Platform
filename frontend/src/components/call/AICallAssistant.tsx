@@ -67,10 +67,31 @@ export default function AICallAssistant({ onClose }: AICallAssistantProps) {
           }
         }
 
-        if (foundNumber && !setStartTime.current) {
-          // First rep initializes the timer for "duration" of the set!
-          setStartTime.current = Date.now()
-          setAiMessage("Great form! Keep the pace up!")
+        if (foundNumber) {
+          if (!setStartTime.current && reps > 0) {
+            setStartTime.current = Date.now()
+            setAiMessage("Great start! Keep pushing!")
+          }
+          
+          // Verbal feedback every 5 reps
+          if (reps > 0 && reps % 5 === 0 && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel()
+            const utterance = new SpeechSynthesisUtterance(`${reps} reps, well done!`)
+            utterance.rate = 1.1
+            window.speechSynthesis.speak(utterance)
+          }
+        }
+
+        // Try to detect exercise name from speech
+        if (!currentExercise && !foundNumber) {
+          const exercises = ['bench press', 'squats', 'deadlift', 'pushups', 'pullups', 'plank', 'biceps', 'shoulder press']
+          for (const ex of exercises) {
+            if (currentTranscript.includes(ex)) {
+              setCurrentExercise(ex.charAt(0).toUpperCase() + ex.slice(1))
+              setAiMessage(`Starting ${ex} tracking. Ready for your first rep!`)
+              break
+            }
+          }
         }
       }
 

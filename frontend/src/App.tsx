@@ -51,8 +51,23 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+import TwoFactorSetup from './components/auth/TwoFactorSetup'
+import { authApi } from './api/auth'
+
 export default function App() {
-  const { user, token } = useAuthStore()
+  const { user, token, setUser } = useAuthStore()
+  const show2FA = !!(token && user && !user.twoFactorEnabled && !user.twoFactorSkipped)
+
+  const handle2FAComplete = () => {
+    if (user) setUser({ ...user, twoFactorEnabled: true })
+  }
+
+  const handle2FASkip = async () => {
+    try {
+      await authApi.skip2FA()
+      if (user) setUser({ ...user, twoFactorSkipped: true })
+    } catch {}
+  }
 
   return (
     <>
@@ -184,7 +199,8 @@ export default function App() {
       </Routes>
 
       {token && user && <VoiceOrb />}
-      <IncomingCallModal />
+      {token && user && <IncomingCallModal />}
+      {show2FA && <TwoFactorSetup onComplete={handle2FAComplete} onSkip={handle2FASkip} />}
     </>
   )
 }

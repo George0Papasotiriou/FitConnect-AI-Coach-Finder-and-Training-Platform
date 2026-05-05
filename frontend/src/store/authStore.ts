@@ -10,6 +10,8 @@ export interface User {
   xp?: number
   level?: number
   onboardingComplete?: boolean
+  twoFactorEnabled?: boolean
+  twoFactorSkipped?: boolean
 }
 
 interface AuthStore {

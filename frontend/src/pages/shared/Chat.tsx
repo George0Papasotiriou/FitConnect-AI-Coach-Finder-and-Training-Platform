@@ -90,9 +90,15 @@ export default function Chat() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-text-secondary truncate mt-0.5">
-                        {conv.lastMessage?.content || 'No messages yet'}
-                      </p>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <p className="text-xs text-text-secondary truncate flex-1">
+                          {conv.lastMessage?.senderId === user?.id && <span className="opacity-50">You: </span>}
+                          {conv.lastMessage?.content || 'No messages yet'}
+                        </p>
+                        {conv.lastMessage?.senderId === user?.id && conv.lastMessage?.readAt && (
+                          <span className="text-[10px] text-accent-teal font-bold ml-2">Seen</span>
+                        )}
+                      </div>
                     </div>
                   </motion.button>
                 )

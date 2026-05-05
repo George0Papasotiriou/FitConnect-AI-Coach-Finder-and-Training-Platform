@@ -44,7 +44,7 @@ export default function CoachProfile() {
     if (!id) return
     try {
       const { sessionId } = await traineeApi.requestInstantSession(id)
-      navigate(`/call/${sessionId}`)
+      navigate(`/call/${sessionId}?initiator=true`)
     } catch { toast.error('Failed to start session') }
   }
 

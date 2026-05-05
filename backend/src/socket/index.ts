@@ -66,13 +66,18 @@ export function initializeSocket(io: Server) {
 
     // Call status tracking
     socket.on('join_session', (sessionId: string) => {
+      console.log(`🔌 User ${userId} (socket: ${socket.id}) joining session: ${sessionId}`);
       socket.join(`session:${sessionId}`);
       socket.to(`session:${sessionId}`).emit('peer_joined');
       userStatuses.set(userId, 'in-call');
       io.emit('user_status_change', { userId, status: 'in-call' });
+      // Log who is in the room
+      const room = io.sockets.adapter.rooms.get(`session:${sessionId}`);
+      console.log(`🔌 Room session:${sessionId} now has ${room?.size || 0} members`);
     });
 
     socket.on('peer_ready', (data: { sessionId: string }) => {
+      console.log(`✅ peer_ready from ${userId} for session: ${data.sessionId}`);
       socket.to(`session:${data.sessionId}`).emit('peer_ready');
     });
 
@@ -86,17 +91,9 @@ export function initializeSocket(io: Server) {
       io.emit('user_status_change', { userId, status: 'available' });
     });
 
-    // WebRTC signaling
-    socket.on('webrtc_offer', (data: { sessionId: string; signal: any }) => {
-      socket.to(`session:${data.sessionId}`).emit('webrtc_offer', { signal: data.signal, from: userId });
-    });
-
-    socket.on('webrtc_answer', (data: { sessionId: string; signal: any }) => {
-      socket.to(`session:${data.sessionId}`).emit('webrtc_answer', { signal: data.signal, from: userId });
-    });
-
-    socket.on('webrtc_ice_candidate', (data: { sessionId: string; signal: any }) => {
-      socket.to(`session:${data.sessionId}`).emit('webrtc_ice_candidate', { signal: data.signal, from: userId });
+    // WebRTC signaling (Unified)
+    socket.on('webrtc_signal', (data: { sessionId: string; signal: any }) => {
+      socket.to(`session:${data.sessionId}`).emit('webrtc_signal', { signal: data.signal, from: userId });
     });
 
     socket.on('coach_match_accept', (data: { traineeId: string; trainerId: string }) => {
@@ -107,13 +104,17 @@ export function initializeSocket(io: Server) {
     });
 
     socket.on('incoming_call', (data: { targetUserId: string; conversationId: string; callerName: string; type: string }) => {
+      console.log(`📞 incoming_call from ${userId} to ${data.targetUserId}. Caller: ${data.callerName}`);
       const targetSocket = onlineUsers.get(data.targetUserId);
       if (targetSocket) {
+        console.log(`📞 Delivering call notification to socket: ${targetSocket}`);
         io.to(targetSocket).emit('incoming_call', {
           conversationId: data.conversationId,
           callerName: data.callerName,
           type: data.type
         });
+      } else {
+        console.log(`📞 Target user ${data.targetUserId} is NOT online. Online users:`, Array.from(onlineUsers.keys()));
       }
     });
 
@@ -129,10 +130,12 @@ export function initializeSocket(io: Server) {
     });
 
     socket.on('disconnect', () => {
-      onlineUsers.delete(userId);
-      userStatuses.delete(userId);
-      io.emit('user_offline', { userId });
-      io.emit('user_status_change', { userId, status: 'offline' });
+      if (onlineUsers.get(userId) === socket.id) {
+        onlineUsers.delete(userId);
+        userStatuses.delete(userId);
+        io.emit('user_offline', { userId });
+        io.emit('user_status_change', { userId, status: 'offline' });
+      }
     });
   });
 }

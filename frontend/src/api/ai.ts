@@ -8,8 +8,8 @@ export interface VoiceAIRequest {
 export interface VoiceAIResponse {
   response: string
   action?: {
-    type: 'navigate' | 'search' | 'info'
-    payload?: string
+    type: 'navigate' | 'search' | 'info' | 'rep_counter_start' | 'log_pr'
+    payload?: any
   }
 }
 

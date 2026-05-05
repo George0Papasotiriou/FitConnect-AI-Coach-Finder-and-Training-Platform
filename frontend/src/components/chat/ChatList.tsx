@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import { Check, CheckCheck } from 'lucide-react'
 import type { Conversation } from '../../api/chat'
 import { useAuthStore } from '../../store/authStore'
 import Avatar from '../common/Avatar'
@@ -54,9 +55,16 @@ export default function ChatList({ conversations, activeId, onSelect }: ChatList
                     <span className="text-xs text-text-secondary flex-shrink-0 ml-2">{time}</span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xs text-text-secondary truncate">
-                      {conv.lastMessage?.content || 'Start a conversation'}
-                    </span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      {conv.lastMessage?.senderId === user?.id && (
+                        conv.lastMessage?.readAt 
+                          ? <CheckCheck size={14} className="text-accent-teal flex-shrink-0" />
+                          : <Check size={14} className="text-text-secondary flex-shrink-0" />
+                      )}
+                      <span className="text-xs text-text-secondary truncate">
+                        {conv.lastMessage?.content || 'Start a conversation'}
+                      </span>
+                    </div>
                     {conv.unreadCount > 0 && (
                       <span className="ml-2 flex-shrink-0 w-5 h-5 bg-accent-purple text-white text-xs rounded-full flex items-center justify-center font-bold">
                         {conv.unreadCount > 9 ? '9+' : conv.unreadCount}

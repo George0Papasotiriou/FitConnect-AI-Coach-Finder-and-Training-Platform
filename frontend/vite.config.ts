@@ -59,8 +59,12 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      'events': 'events'
     }
+  },
+  optimizeDeps: {
+    include: ['simple-peer', 'events']
   },
   server: {
     port: 5173,

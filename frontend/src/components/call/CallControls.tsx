@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Pencil, Zap } from 'lucide-react'
+import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Pencil, Zap, RefreshCcw } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface CallControlsProps {
@@ -12,12 +12,15 @@ interface CallControlsProps {
   isSketchMode?: boolean
   onToggleAI?: () => void
   isAIActive?: boolean
+  onToggleRepCounter?: () => void
+  isRepCounterActive?: boolean
   onEndCall: () => void
 }
 
 export default function CallControls({
   isMuted, isCameraOff, isScreenSharing, onToggleSketch, isSketchMode,
   onToggleAI, isAIActive,
+  onToggleRepCounter, isRepCounterActive,
   onToggleMute, onToggleCamera, onToggleScreenShare, onEndCall
 }: CallControlsProps) {
   const controlBtn = (
@@ -51,6 +54,7 @@ export default function CallControls({
       {controlBtn(onToggleScreenShare, <Monitor size={22} />, isScreenSharing ? 'Stop screen share' : 'Share screen', isScreenSharing)}
       {onToggleSketch && controlBtn(onToggleSketch, <Pencil size={22} />, isSketchMode ? 'Stop sketching' : 'Start sketching', isSketchMode)}
       {onToggleAI && controlBtn(onToggleAI, <Zap size={22} className={isAIActive ? "text-accent-teal" : ""} />, isAIActive ? 'Hide AI Assistant' : 'Show AI Assistant', isAIActive)}
+      {onToggleRepCounter && controlBtn(onToggleRepCounter, <RefreshCcw size={22} className={isRepCounterActive ? "text-accent-teal" : ""} />, isRepCounterActive ? 'Hide Rep Counter' : 'Show Rep Counter', isRepCounterActive)}
       {controlBtn(onEndCall, <PhoneOff size={22} />, 'End call', false, true)}
     </div>
   )

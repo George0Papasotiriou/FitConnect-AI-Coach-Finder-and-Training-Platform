@@ -59,12 +59,14 @@ export default function Call() {
 
   if (isLoading) return <div className="fixed inset-0 bg-black flex items-center justify-center z-50"><Spinner size="lg" color="border-white" /></div>
 
+  const isInitiatorParam = searchParams.get('initiator') === 'true'
+
   return (
     <>
       <Helmet><title>Video Call — Insta Coach</title></Helmet>
       <VideoCall
         sessionId={sessionId!}
-        isInitiator={isChatCall ? user?.role === 'trainee' : user?.id === session?.traineeId}
+        isInitiator={isChatCall ? isInitiatorParam : user?.id === session?.traineeId}
         trainerName={isChatCall ? targetName : (user?.id === session?.traineeId ? session?.trainerName : session?.traineeName)}
         onClose={handleClose}
         isAdhoc={isChatCall}

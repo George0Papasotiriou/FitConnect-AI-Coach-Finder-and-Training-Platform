@@ -190,7 +190,7 @@ export default function TrainerDashboard() {
                           <p className="text-sm font-semibold text-text-primary">{s.traineeName}</p>
                           <p className="text-xs text-text-secondary">{new Date(s.scheduledAt).toLocaleDateString()} at {new Date(s.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
-                        <Button size="sm" variant="teal" onClick={() => navigate(`/call/${s.id}`)}>Start</Button>
+                        <Button size="sm" variant="teal" onClick={() => navigate(`/call/${s.id}?initiator=true`)}>Start</Button>
                       </div>
                     ))}
                   </div>

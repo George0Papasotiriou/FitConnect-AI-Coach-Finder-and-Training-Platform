@@ -1,4 +1,12 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import pg from 'pg';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const { Pool } = pg;
 
@@ -19,23 +27,25 @@ function parameterize(sql: string): string {
 
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
+const dbConfig: any = { connectionString: databaseUrl };
+
+if (databaseUrl) {
+  try {
+    const url = new URL(databaseUrl);
+    if (url.username) dbConfig.user = decodeURIComponent(url.username);
+    if (url.password) dbConfig.password = decodeURIComponent(url.password);
+  } catch (e) {}
+}
 
 if (isProduction && !databaseUrl && !process.env.PGHOST) {
   console.error('❌ CRITICAL: No database configuration found in production!');
 }
 
 export const pool = new Pool({
-  connectionString: databaseUrl,
-  // Fallbacks for individual variables if connectionString is missing
-  user: process.env.PGUSER,
-  host: process.env.PGHOST,
-  database: process.env.PGDATABASE,
-  password: process.env.PGPASSWORD,
-  port: Number(process.env.PGPORT || 5432),
-  ssl: isProduction && !databaseUrl?.includes('railway.internal') ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  ...dbConfig,
+  ssl: isProduction && databaseUrl && !databaseUrl.includes('localhost') && !databaseUrl.includes('railway.internal') 
+    ? { rejectUnauthorized: false } 
+    : false,
 });
 
 pool.on('error', (err) => {
@@ -112,6 +122,9 @@ export async function initializeDatabase() {
       xp INTEGER DEFAULT 0,
       level INTEGER DEFAULT 1,
       streak INTEGER DEFAULT 0,
+      two_factor_secret TEXT,
+      two_factor_enabled INTEGER DEFAULT 0,
+      two_factor_skipped INTEGER DEFAULT 0,
       last_active_date TEXT,
       onboarding_complete INTEGER DEFAULT 0,
       subscription_active INTEGER DEFAULT 0,
@@ -159,6 +172,9 @@ export async function initializeDatabase() {
     );
 
     ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS balance REAL DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled INTEGER DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_skipped INTEGER DEFAULT 0;
 
 
     CREATE TABLE IF NOT EXISTS coach_requests (

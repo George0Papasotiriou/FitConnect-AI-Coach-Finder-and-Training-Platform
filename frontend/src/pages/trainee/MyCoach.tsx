@@ -67,7 +67,7 @@ export default function MyCoach() {
             <Button onClick={handleMessage} size="sm" variant="secondary" leftIcon={<MessageCircle size={16} />}>Chat</Button>
             <Button onClick={() => navigate(`/coach/${coach.id}`)} size="sm" variant="ghost" leftIcon={<Star size={16} />}>Profile</Button>
             <Button onClick={() => {
-              traineeApi.requestInstantSession(coach.id).then(r => navigate(`/call/${r.sessionId}`)).catch(() => toast.error('Failed'))
+              traineeApi.requestInstantSession(coach.id).then(r => navigate(`/call/${r.sessionId}?initiator=true`)).catch(() => toast.error('Failed'))
             }} size="sm" variant="teal" leftIcon={<Video size={16} />}>Workout Now</Button>
           </div>
         </Card>
@@ -84,7 +84,7 @@ export default function MyCoach() {
                     <p className="text-sm font-semibold text-text-primary">{new Date(s.scheduledAt).toLocaleDateString()}</p>
                     <p className="text-xs text-text-secondary">{new Date(s.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
-                  <Button size="sm" onClick={() => navigate(`/call/${s.id}`)}>Join</Button>
+                  <Button size="sm" onClick={() => navigate(`/call/${s.id}?initiator=true`)}>Join</Button>
                 </div>
               ))}
             </div>

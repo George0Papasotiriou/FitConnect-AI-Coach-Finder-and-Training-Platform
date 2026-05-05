@@ -3,6 +3,7 @@ interface BadgeProps {
   variant?: 'purple' | 'teal' | 'orange' | 'green' | 'red' | 'gray'
   size?: 'sm' | 'md'
   dot?: boolean
+  className?: string
 }
 
 const variants = {
@@ -19,9 +20,9 @@ const sizes = {
   md: 'px-3 py-1 text-sm'
 }
 
-export default function Badge({ children, variant = 'purple', size = 'sm', dot = false }: BadgeProps) {
+export default function Badge({ children, variant = 'purple', size = 'sm', dot = false, className = '' }: BadgeProps) {
   return (
-    <span className={`inline-flex items-center gap-1.5 font-medium rounded-full ${variants[variant]} ${sizes[size]}`}>
+    <span className={`inline-flex items-center gap-1.5 font-medium rounded-full ${variants[variant]} ${sizes[size]} ${className}`}>
       {dot && <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />}
       {children}
     </span>

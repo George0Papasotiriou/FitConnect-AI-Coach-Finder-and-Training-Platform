@@ -4,6 +4,7 @@ import { useWebRTC } from '../../hooks/useWebRTC'
 import CallControls from './CallControls'
 import PostCallRating from './PostCallRating'
 import AICallAssistant from './AICallAssistant'
+import AIRepCounter from './AIRepCounter'
 import { format } from 'date-fns'
 
 interface VideoCallProps {
@@ -91,6 +92,8 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
     }
   }, [isSketchMode])
 
+  const [showRepCounter, setShowRepCounter] = useState(false)
+
   return (
     <>
       <motion.div
@@ -171,6 +174,8 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
             }}
             onToggleAI={() => setShowAI(!showAI)}
             isAIActive={showAI}
+            onToggleRepCounter={() => setShowRepCounter(!showRepCounter)}
+            isRepCounterActive={showRepCounter}
             onEndCall={handleEnd}
           />
         </div>
@@ -178,6 +183,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
 
       <AnimatePresence>
         {showAI && <AICallAssistant onClose={() => setShowAI(false)} />}
+        {showRepCounter && <AIRepCounter onClose={() => setShowRepCounter(false)} />}
       </AnimatePresence>
 
       <PostCallRating

@@ -23,6 +23,8 @@ export interface AuthResponse {
     xp?: number
     level?: number
     onboardingComplete?: boolean
+    twoFactorEnabled?: boolean
+    twoFactorSkipped?: boolean
   }
 }
 
@@ -40,5 +42,14 @@ export const authApi = {
     apiClient.get<AuthResponse['user']>('/auth/me').then(r => r.data),
 
   refreshToken: () =>
-    apiClient.post<{ token: string }>('/auth/refresh').then(r => r.data)
+    apiClient.post<{ token: string }>('/auth/refresh').then(r => r.data),
+
+  setup2FA: () =>
+    apiClient.post<{ qrCode: string; secret: string }>('/auth/2fa/setup').then(r => r.data),
+
+  verify2FA: (token: string) =>
+    apiClient.post<{ success: boolean }>('/auth/2fa/verify', { token }).then(r => r.data),
+
+  skip2FA: () =>
+    apiClient.post<{ success: boolean }>('/auth/2fa/skip').then(r => r.data)
 }

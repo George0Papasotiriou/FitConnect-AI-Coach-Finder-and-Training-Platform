@@ -17,9 +17,11 @@ interface UseVoiceAIReturn {
   transcript: string
   response: string
   amplitude: number
+  currentAction: { type: string; payload?: any } | null
   startListening: () => void
   stopListening: () => void
   speak: (text: string) => void
+  clearAction: () => void
 }
 
 export function useVoiceAI(): UseVoiceAIReturn {
@@ -27,6 +29,7 @@ export function useVoiceAI(): UseVoiceAIReturn {
   const [isProcessing, setIsProcessing] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [response, setResponse] = useState('')
+  const [currentAction, setCurrentAction] = useState<{ type: string; payload?: any } | null>(null)
   const [amplitude, setAmplitude] = useState(0)
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -38,6 +41,8 @@ export function useVoiceAI(): UseVoiceAIReturn {
 
   const navigate = useNavigate()
 
+  const clearAction = useCallback(() => setCurrentAction(null), [])
+
   const processVoiceCommand = useCallback(async (text: string) => {
     setIsProcessing(true)
     try {
@@ -45,12 +50,16 @@ export function useVoiceAI(): UseVoiceAIReturn {
       setResponse(result.response)
 
       if (result.action) {
+        setCurrentAction(result.action)
         switch (result.action.type) {
           case 'navigate':
             if (result.action.payload) navigate(result.action.payload)
             break
           case 'search':
             navigate(`/search?q=${encodeURIComponent(result.action.payload || '')}`)
+            break
+          case 'rep_counter_start':
+            // This will be handled by components listening to the voice AI state
             break
         }
       }
@@ -161,5 +170,5 @@ export function useVoiceAI(): UseVoiceAIReturn {
     }
   }, [stopAmplitudeTracking])
 
-  return { isListening, isProcessing, transcript, response, amplitude, startListening, stopListening, speak }
+  return { isListening, isProcessing, transcript, response, amplitude, currentAction, startListening, stopListening, speak, clearAction }
 }

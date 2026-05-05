@@ -41,12 +41,22 @@ const cleanOrigin = rawOrigin.replace(/\/$/, '');
 
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://[::1]:5173',
   cleanOrigin
 ].filter(Boolean) as string[];
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Fallback to true for production variants if not explicitly denied
+      }
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -54,11 +64,17 @@ const io = new Server(server, {
 
 app.use(helmet({ 
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false // Disable CSP for easier deployment troubleshooting
+  contentSecurityPolicy: false
 }));
 
 app.use(cors({ 
-  origin: allowedOrigins.length > 0 ? allowedOrigins : true, 
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  }, 
   credentials: true 
 }));
 

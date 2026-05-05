@@ -212,7 +212,7 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               emit('incoming_call', { targetUserId: other?.id, conversationId: conversation.id, callerName: user?.name, type: 'audio' })
-              navigate(`/call/${conversation.id}?type=chat&audio=true&name=${encodeURIComponent(other?.name || 'User')}`)
+              navigate(`/call/${conversation.id}?type=chat&audio=true&initiator=true&name=${encodeURIComponent(other?.name || 'User')}`)
             }}
             className="p-2.5 rounded-xl text-text-secondary hover:text-accent-teal hover:bg-accent-teal/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
             aria-label="Start audio call"
@@ -224,7 +224,7 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               emit('incoming_call', { targetUserId: other?.id, conversationId: conversation.id, callerName: user?.name, type: 'video' })
-              navigate(`/call/${conversation.id}?type=chat&name=${encodeURIComponent(other?.name || 'User')}`)
+              navigate(`/call/${conversation.id}?type=chat&initiator=true&name=${encodeURIComponent(other?.name || 'User')}`)
             }}
             className="p-2.5 rounded-xl text-text-secondary hover:text-accent-purple hover:bg-accent-purple/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
             aria-label="Start video call"
