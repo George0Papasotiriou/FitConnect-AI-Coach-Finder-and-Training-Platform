@@ -6,6 +6,7 @@ import { MessageCircle } from 'lucide-react'
 import { chatApi } from '../../api/chat'
 import { useAuthStore } from '../../store/authStore'
 import { useOnlineStore } from '../../store/onlineStore'
+import { useChatStore } from '../../store/chatStore'
 import ChatWindow from '../../components/chat/ChatWindow'
 import Avatar from '../../components/common/Avatar'
 
@@ -14,16 +15,21 @@ export default function Chat() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { getStatus } = useOnlineStore()
-  const [conversations, setConversations] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { conversations, setConversations } = useChatStore()
+  const [isLoading, setIsLoading] = useState(conversations.length === 0)
   const [selectedConv, setSelectedConv] = useState<string | null>(conversationId || null)
 
   useEffect(() => {
-    chatApi.getConversations().then(data => {
-      setConversations(data)
+    if (conversations.length === 0) {
+      chatApi.getConversations().then(data => {
+        setConversations(data)
+        if (conversationId) setSelectedConv(conversationId)
+      }).catch(() => {}).finally(() => setIsLoading(false))
+    } else {
+      setIsLoading(false)
       if (conversationId) setSelectedConv(conversationId)
-    }).catch(() => {}).finally(() => setIsLoading(false))
-  }, [conversationId])
+    }
+  }, [conversationId, conversations.length, setConversations])
 
   const handleSelectConversation = (id: string) => {
     setSelectedConv(id)
@@ -33,7 +39,7 @@ export default function Chat() {
   return (
     <>
       <Helmet><title>Chat — Insta Coach</title></Helmet>
-      <div className="h-[calc(100vh-120px)] flex rounded-2xl overflow-hidden border border-border-color bg-bg-card">
+      <div className="h-[calc(100vh-150px)] md:h-[calc(100vh-120px)] flex rounded-2xl overflow-hidden border border-border-color bg-bg-card shadow-sm">
         {/* Conversation List */}
         <div className={`w-full md:w-80 lg:w-96 border-r border-border-color flex flex-col ${selectedConv ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-4 border-b border-border-color">
@@ -56,7 +62,7 @@ export default function Chat() {
               </div>
             ) : (
               conversations.map((conv, i) => {
-                const otherUser = conv.participants?.find((p: any) => p.id !== user?.id) || { name: 'Unknown' }
+                const otherUser = conv.participants?.find((p: any) => p.id !== user?.id) || { id: '', name: 'Unknown', avatar: undefined }
                 const otherStatus = otherUser.id ? getStatus(otherUser.id) : 'offline' as const
                 const isActive = selectedConv === conv.id
 
@@ -85,7 +91,7 @@ export default function Chat() {
                           {otherUser.name}
                         </p>
                         {conv.unreadCount > 0 && (
-                          <span className="w-5 h-5 bg-accent-purple text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2">
+                          <span className="w-5 h-5 bg-accent-purple text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
                             {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
                           </span>
                         )}
@@ -108,7 +114,7 @@ export default function Chat() {
         </div>
 
         {/* Chat Window */}
-        <div className={`flex-1 flex flex-col ${selectedConv ? 'flex' : 'hidden md:flex'}`}>
+        <div className={`flex-1 flex flex-col relative ${selectedConv ? 'flex' : 'hidden md:flex'}`}>
           <AnimatePresence mode="wait">
             {selectedConv && conversations.find(c => c.id === selectedConv) ? (
               <motion.div
@@ -116,7 +122,7 @@ export default function Chat() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col h-full"
+                className="flex-1 flex flex-col h-full absolute inset-0"
               >
                 <ChatWindow
                   conversation={conversations.find(c => c.id === selectedConv)!}
@@ -127,7 +133,7 @@ export default function Chat() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex-1 flex items-center justify-center"
+                className="flex-1 flex items-center justify-center absolute inset-0"
               >
                 <div className="text-center">
                   <div className="w-20 h-20 bg-gradient-to-br from-accent-purple/20 to-accent-teal/20 rounded-full flex items-center justify-center mx-auto mb-4">

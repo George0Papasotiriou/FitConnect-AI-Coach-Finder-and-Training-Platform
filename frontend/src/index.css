@@ -33,12 +33,16 @@
 
   html {
     scroll-behavior: smooth;
+    /* PWA Support */
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-bg-primary text-text-primary font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent pull-to-refresh on mobile apps */
+    overscroll-behavior-y: none;
   }
 
   :focus-visible {
@@ -108,6 +112,14 @@
     scrollbar-color: var(--border-color) transparent;
   }
 
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
@@ -123,6 +135,20 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: var(--accent-purple);
+  }
+
+  /* Custom mobile horizontal scrollbar hide */
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hidden {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* Safe Area paddings */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
   }
 
   /* Kudos heart rain animation */

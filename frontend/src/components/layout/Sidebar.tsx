@@ -23,20 +23,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const traineeNav = [
     { to: '/trainee/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { to: '/search', icon: <Search size={20} />, label: 'Find Coach' },
+    { to: '/progress-hub', icon: <Sparkles size={20} />, label: 'My Progress' },
     { to: '/my-coach', icon: <User size={20} />, label: 'My Coach' },
     { to: '/programs', icon: <Dumbbell size={20} />, label: 'My Programs' },
-    { to: '/progress', icon: <Camera size={20} />, label: 'Progress Vault' },
-    { to: '/form-critic', icon: <Brain size={20} />, label: 'Form Critic' },
-    { to: '/recovery', icon: <Heart size={20} />, label: 'Recovery' },
-    { to: '/circadian', icon: <Sun size={20} />, label: 'Body Rhythm' },
     { to: '/map', icon: <Globe size={20} />, label: 'Sweat Map' },
-    { to: '/virtual-gym', icon: <Box size={20} />, label: 'Virtual Studio' },
+    {to: '/virtual-gym', icon: <Box size={20} />, label: 'Solo Trainer' },
     { to: '/bounties', icon: <Target size={20} />, label: 'Bounties' },
-    { to: '/ai-trainer', icon: <Sparkles size={20} />, label: 'AI Trainer' },
+    { to: '/ai-trainer', icon: <Zap size={20} />, label: 'AI Trainer' },
     { to: '/chat', icon: <MessageCircle size={20} />, label: 'Messages' },
-    { to: '/leaderboard', icon: <Trophy size={20} />, label: 'Leaderboard' },
-    { to: '/achievements', icon: <Star size={20} />, label: 'Achievements' }
+    { to: '/leaderboard', icon: <Trophy size={20} />, label: 'Leaderboard' }
   ]
 
   const trainerNav = [

@@ -29,12 +29,16 @@ export const useChatStore = create<ChatStore>((set) => ({
   setActiveConversation: (id) => set({ activeConversation: id }),
 
   addMessage: (conversationId, message) =>
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [conversationId]: [...(state.messages[conversationId] || []), message]
+    set((state) => {
+      const existing = state.messages[conversationId] || []
+      const isDuplicate = existing.some(m => m.id === message.id)
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: isDuplicate ? existing : [...existing, message]
+        }
       }
-    })),
+    }),
 
   setMessages: (conversationId, messages) =>
     set((state) => ({
@@ -72,7 +76,7 @@ export const useChatStore = create<ChatStore>((set) => ({
       messages: {
         ...state.messages,
         [conversationId]: (state.messages[conversationId] || []).map((m) =>
-          m.senderId === userId ? { ...m, readAt: new Date().toISOString() } : m
+          m.senderId !== userId ? { ...m, readAt: new Date().toISOString() } : m
         )
       }
     })),

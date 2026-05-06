@@ -4,8 +4,6 @@ import { useWebRTC } from '../../hooks/useWebRTC'
 import CallControls from './CallControls'
 import PostCallRating from './PostCallRating'
 import AICallAssistant from './AICallAssistant'
-import AIRepCounter from './AIRepCounter'
-import { format } from 'date-fns'
 
 interface VideoCallProps {
   sessionId: string
@@ -27,6 +25,10 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
   const [showAI, setShowAI] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
+  const [showControls, setShowControls] = useState(true)
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
 
   const handleCallEnded = () => {
     if (isAdhoc) onClose()
@@ -42,6 +44,35 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
   useEffect(() => {
     startCall()
   }, [])
+
+  useEffect(() => {
+    const updateSize = () => {
+        if (containerRef.current) {
+            setContainerSize({
+                width: containerRef.current.offsetWidth,
+                height: containerRef.current.offsetHeight
+            })
+        }
+    }
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
+
+  const resetControlsTimeout = () => {
+      setShowControls(true)
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current)
+      controlsTimeoutRef.current = setTimeout(() => {
+          if (isConnected) setShowControls(false)
+      }, 4000)
+  }
+
+  useEffect(() => {
+      resetControlsTimeout()
+      return () => {
+          if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current)
+      }
+  }, [isConnected])
 
   const handleEnd = () => {
     endCall()
@@ -86,34 +117,36 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
   }
 
   useEffect(() => {
-    if (isSketchMode && canvasRef.current) {
-      canvasRef.current.width = canvasRef.current.offsetWidth
-      canvasRef.current.height = canvasRef.current.offsetHeight
+    if (isSketchMode && canvasRef.current && containerRef.current) {
+      canvasRef.current.width = containerRef.current.offsetWidth
+      canvasRef.current.height = containerRef.current.offsetHeight
     }
-  }, [isSketchMode])
-
-  const [showRepCounter, setShowRepCounter] = useState(false)
+  }, [isSketchMode, containerSize])
 
   return (
     <>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="fixed inset-0 z-50 bg-black flex flex-col"
+        className="fixed inset-0 z-[100] bg-black flex flex-col md:flex-row touch-none"
         aria-label="Video call"
+        onClick={resetControlsTimeout}
+        onMouseMove={resetControlsTimeout}
+        onTouchStart={resetControlsTimeout}
       >
-        <div className="relative flex-1 overflow-hidden">
+        <div ref={containerRef} className="relative flex-1 overflow-hidden bg-black flex flex-col md:block">
+          {/* Main Remote Video */}
           <video
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover md:h-full md:w-full"
             aria-label="Remote video"
           />
 
           <canvas
             ref={canvasRef}
-            className={`absolute inset-0 z-10 w-full h-full pointer-events-${isSketchMode ? 'auto' : 'none'}`}
+            className={`absolute inset-0 z-10 w-full h-full touch-none ${isSketchMode ? 'pointer-events-auto' : 'pointer-events-none'}`}
             onMouseDown={startDrawing}
             onMouseMove={draw}
             onMouseUp={stopDrawing}
@@ -121,24 +154,30 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
             onTouchStart={startDrawing}
             onTouchMove={draw}
             onTouchEnd={stopDrawing}
+            style={{ touchAction: 'none' }}
           />
 
           {!isConnected && (
-            <div className="absolute inset-0 flex items-center justify-center bg-bg-primary">
-              <div className="text-center space-y-4">
+            <div className="absolute inset-0 flex items-center justify-center bg-bg-primary z-20">
+              <div className="text-center space-y-4 px-4">
                 <div className="w-20 h-20 rounded-full bg-accent-purple/20 flex items-center justify-center mx-auto">
                   <div className="w-12 h-12 border-2 border-accent-purple border-t-transparent rounded-full animate-spin" />
                 </div>
-                <p className="text-text-primary font-medium">Connecting to {trainerName}...</p>
+                <p className="text-text-primary font-medium text-lg">Connecting to {trainerName}...</p>
+                <p className="text-sm text-text-secondary">Establishing secure connection</p>
               </div>
             </div>
           )}
 
+          {/* Local Video PIP - Draggable */}
           <motion.div
             drag
-            dragConstraints={{ left: 0, right: 200, top: 0, bottom: 400 }}
-            className="absolute top-4 right-4 w-32 h-24 rounded-xl overflow-hidden border-2 border-white/20 shadow-xl cursor-move"
+            dragConstraints={containerRef}
+            dragElastic={0.1}
+            dragMomentum={false}
+            className="absolute z-20 top-4 right-4 w-28 h-40 md:w-32 md:h-48 rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl cursor-move bg-gray-900"
             aria-label="Your video"
+            style={{ touchAction: 'none' }}
           >
             <video
               ref={localVideoRef}
@@ -149,42 +188,63 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
             />
           </motion.div>
 
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2">
-            {isConnected && (
-              <span className="w-2 h-2 bg-accent-teal rounded-full animate-pulse" aria-hidden="true" />
+          {/* Header Info Banner */}
+          <AnimatePresence>
+            {showControls && (
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-full px-5 py-2.5 z-30 shadow-lg border border-white/10"
+                >
+                    {isConnected ? (
+                        <span className="w-2.5 h-2.5 bg-accent-teal rounded-full animate-pulse shadow-[0_0_8px_#059669]" aria-hidden="true" />
+                    ) : (
+                        <span className="w-2.5 h-2.5 bg-accent-orange rounded-full animate-pulse" aria-hidden="true" />
+                    )}
+                    <span className="text-white text-sm font-mono font-medium tracking-wider" aria-live="polite" aria-atomic="true">
+                    {formatDuration(callDuration)}
+                    </span>
+                </motion.div>
             )}
-            <span className="text-white text-sm font-mono" aria-live="polite" aria-atomic="true">
-              {formatDuration(callDuration)}
-            </span>
-          </div>
+          </AnimatePresence>
         </div>
 
-        <div className="bg-black/90 backdrop-blur-sm py-6 px-4">
-          <CallControls
-            isMuted={isMuted}
-            isCameraOff={isCameraOff}
-            isScreenSharing={isScreenSharing}
-            isSketchMode={isSketchMode}
-            onToggleMute={toggleMute}
-            onToggleCamera={toggleCamera}
-            onToggleScreenShare={toggleScreenShare}
-            onToggleSketch={() => {
-              if (isSketchMode) clearCanvas()
-              setIsSketchMode(!isSketchMode)
-            }}
-            onToggleAI={() => setShowAI(!showAI)}
-            isAIActive={showAI}
-            onToggleRepCounter={() => setShowRepCounter(!showRepCounter)}
-            isRepCounterActive={showRepCounter}
-            onEndCall={handleEnd}
-          />
-        </div>
+        {/* Controls Bar */}
+        <AnimatePresence>
+            {showControls && (
+                <motion.div 
+                    initial={{ opacity: 0, y: 100 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 100 }}
+                    className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/90 via-black/60 to-transparent pb-[env(safe-area-inset-bottom,24px)] pt-12 px-2 md:px-4"
+                >
+                    <CallControls
+                        isMuted={isMuted}
+                        isCameraOff={isCameraOff}
+                        isScreenSharing={isScreenSharing}
+                        isSketchMode={isSketchMode}
+                        onToggleMute={toggleMute}
+                        onToggleCamera={toggleCamera}
+                        onToggleScreenShare={toggleScreenShare}
+                        onToggleSketch={() => {
+                            if (isSketchMode) clearCanvas()
+                            setIsSketchMode(!isSketchMode)
+                        }}
+                        onToggleAI={() => setShowAI(!showAI)}
+                        isAIActive={showAI}
+                        onEndCall={handleEnd}
+                    />
+                </motion.div>
+            )}
+        </AnimatePresence>
+        
+        {/* Render AICallAssistant INSIDE the Z-100 modal container so it stays on top */}
+        <AnimatePresence>
+          {showAI && <AICallAssistant onClose={() => setShowAI(false)} />}
+        </AnimatePresence>
+        
       </motion.div>
-
-      <AnimatePresence>
-        {showAI && <AICallAssistant onClose={() => setShowAI(false)} />}
-        {showRepCounter && <AIRepCounter onClose={() => setShowRepCounter(false)} />}
-      </AnimatePresence>
 
       <PostCallRating
         isOpen={showRating}

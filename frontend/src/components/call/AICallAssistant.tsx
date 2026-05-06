@@ -160,7 +160,6 @@ export default function AICallAssistant({ onClose }: AICallAssistantProps) {
     startTimer(60)
   }
 
-  // Allow manual rep additions to start the set timer
   const adjustReps = (amount: number) => {
     if (!setStartTime.current && amount > 0) setStartTime.current = Date.now()
     setReps(Math.max(0, reps + amount))
@@ -187,16 +186,15 @@ export default function AICallAssistant({ onClose }: AICallAssistantProps) {
     }
   }
 
-  // Calculate total sets for the ACTIVE exercise dynamically to display next to the huge Reps counter!
   const currentExTrackerInfo = workoutLog.find(e => e.name.toLowerCase() === currentExercise.trim().toLowerCase())
   const activeSetsDisplay = currentExTrackerInfo ? currentExTrackerInfo.sets.length : 0
 
   return (
     <motion.div
-      initial={{ x: 340, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 340, opacity: 0 }}
-      className="absolute top-4 right-4 w-80 max-h-[90vh] overflow-y-auto bg-surface-dark border border-white/10 rounded-2xl shadow-2xl p-5 flex flex-col gap-6 z-50 backdrop-blur-xl custom-scrollbar"
+      initial={{ y: "100%", opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: "100%", opacity: 0 }}
+      className="fixed bottom-0 left-0 right-0 md:top-4 md:right-4 md:left-auto md:bottom-auto md:w-80 max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-surface-dark border-t md:border border-white/10 rounded-t-3xl md:rounded-2xl shadow-2xl p-5 pb-[calc(env(safe-area-inset-bottom,20px)+20px)] md:pb-5 flex flex-col gap-6 z-[120] backdrop-blur-xl custom-scrollbar"
     >
       <div className="flex items-center justify-between sticky top-0 bg-surface-dark/90 backdrop-blur-md z-10 pb-2 border-b border-border-color">
         <div className="flex items-center gap-2">

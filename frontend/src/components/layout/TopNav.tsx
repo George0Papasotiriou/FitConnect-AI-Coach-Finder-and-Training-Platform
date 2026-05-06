@@ -7,32 +7,44 @@ import ThemeToggle from '../common/ThemeToggle'
 
 interface TopNavProps {
   sidebarCollapsed: boolean
+  isMobile?: boolean
 }
 
-export default function TopNav({ sidebarCollapsed }: TopNavProps) {
+export default function TopNav({ sidebarCollapsed, isMobile }: TopNavProps) {
   const { unreadCount } = useNotificationStore()
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
   return (
     <header
-      className="fixed top-0 right-0 h-16 bg-bg-card/80 backdrop-blur-xl border-b border-border-color z-30 flex items-center justify-between px-6 transition-all duration-300"
-      style={{ left: sidebarCollapsed ? 72 : 256 }}
+      className="fixed top-0 right-0 h-16 bg-bg-primary/90 backdrop-blur-xl border-b border-border-color z-30 flex items-center justify-between px-4 md:px-6 transition-all duration-300 shadow-sm pt-[env(safe-area-inset-top,0px)]"
+      style={{ left: isMobile ? 0 : (sidebarCollapsed ? 72 : 256) }}
       aria-label="Top navigation"
     >
-      <div className="flex-1 max-w-md">
-        <div className="relative">
+      <div className="flex-1 max-w-md flex items-center gap-2">
+        {isMobile && (
+            <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-lg flex items-center justify-center flex-shrink-0">
+               <span className="text-white font-black text-xs">IC</span>
+            </div>
+        )}
+        <div className={`relative ${isMobile ? 'hidden sm:block' : 'block'}`}>
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
           <input
             type="search"
             placeholder="Search..."
             aria-label="Search the app"
-            className="w-full bg-bg-primary border border-border-color rounded-xl pl-9 pr-4 py-2 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:border-accent-purple focus:ring-1 focus:ring-accent-purple transition-all"
+            className="w-full bg-bg-card border border-border-color rounded-xl pl-9 pr-4 py-2 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:border-accent-purple focus:ring-1 focus:ring-accent-purple transition-all"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3">
+      <div className="flex items-center gap-1 md:gap-3">
+        {isMobile && (
+           <button className="p-2 sm:hidden text-text-secondary hover:text-text-primary rounded-xl">
+               <Search size={20} />
+           </button>
+        )}
+        
         <ThemeToggle />
         
         <button

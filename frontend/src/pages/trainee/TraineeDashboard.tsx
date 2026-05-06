@@ -60,8 +60,8 @@ export default function TraineeDashboard() {
             <Button variant="secondary" size="sm" onClick={() => navigate('/programs')} leftIcon={<Dumbbell size={16} />}>
               My Programs
             </Button>
-            <Button size="sm" onClick={() => navigate('/search')} leftIcon={<Sparkles size={16} />}>
-              Find a Coach
+            <Button size="sm" onClick={() => navigate('/progress-hub')} leftIcon={<Sparkles size={16} />}>
+              My Progress
             </Button>
           </motion.div>
         </div>

@@ -18,7 +18,7 @@ export default function Settings() {
     fontSize: parseInt(localStorage.getItem('fc_fontSize') || '16'),
     reduceMotion: localStorage.getItem('fc_reduceMotion') === 'true',
     voiceNavigation: localStorage.getItem('fc_voiceNav') === 'true',
-    notificationsEnabled: true,
+    notificationsEnabled: localStorage.getItem('fc_notificationsEnabled') !== 'false',
     soundEnabled: true,
     wearableConnected: localStorage.getItem('fc_wearable') === 'true',
   })

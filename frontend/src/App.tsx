@@ -33,6 +33,8 @@ import CircadianOptimizer from './pages/trainee/CircadianOptimizer'
 import CommunityMap from './pages/shared/CommunityMap'
 import VirtualGym from './pages/shared/VirtualGym'
 import IncomingCallModal from './components/call/IncomingCallModal'
+import SocketManager from './components/layout/SocketManager'
+import ProgressHub from './pages/shared/ProgressHub'
 
 function PrivateRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, token } = useAuthStore()
@@ -111,6 +113,11 @@ export default function App() {
           <Route path="/trainee/dashboard" element={
             <PrivateRoute roles={['trainee']}>
               <TraineeDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/progress-hub" element={
+            <PrivateRoute roles={['trainee']}>
+              <ProgressHub />
             </PrivateRoute>
           } />
           <Route path="/search" element={
@@ -200,6 +207,7 @@ export default function App() {
 
       {token && user && <VoiceOrb />}
       {token && user && <IncomingCallModal />}
+      {token && user && <SocketManager />}
       {show2FA && <TwoFactorSetup onComplete={handle2FAComplete} onSkip={handle2FASkip} />}
     </>
   )

@@ -147,6 +147,14 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res) => {
     await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', convId, req.user!.id);
     await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', convId, participantId);
 
+    // Get the socket server instance from app
+    const io = req.app.get('io');
+    if (io) {
+      // Notify both participants to join the room
+      io.to(`user:${req.user!.id}`).emit('new_conversation', { conversationId: convId });
+      io.to(`user:${participantId}`).emit('new_conversation', { conversationId: convId });
+    }
+
     res.json({ id: convId });
   } catch (err) {
     console.error('Create conversation error:', err);

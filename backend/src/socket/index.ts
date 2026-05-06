@@ -27,6 +27,7 @@ export function initializeSocket(io: Server) {
     const userId = (socket as any).userId;
     onlineUsers.set(userId, socket.id);
     userStatuses.set(userId, 'available');
+    socket.join(`user:${userId}`);
 
     // Broadcast new user online status
     io.emit('user_online', { userId });
@@ -34,7 +35,7 @@ export function initializeSocket(io: Server) {
 
     try {
       const conversations = await db.all('SELECT conversation_id FROM conversation_participants WHERE user_id = ?', userId);
-      conversations.forEach((c: any) => socket.join(`conv:${c.conversationId}`));
+      conversations.forEach((c: any) => socket.join(`conv:${c.conversation_id}`));
     } catch (err) {
       console.error('Socket join conversations error:', err);
     }
