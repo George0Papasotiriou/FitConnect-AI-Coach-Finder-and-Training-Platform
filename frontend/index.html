@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192x192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="description" content="Insta Coach - Find Your Perfect Coach. Transform Your Life." />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <title>Insta Coach</title>
+    <style>
+      :root {
+        --bg-primary: #ffffff;
+        --bg-card: #f8fafc;
+        --bg-card-hover: #f1f5f9;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+        --accent-purple: #10b981;
+        --accent-teal: #059669;
+      }
+
+      .dark {
+        --bg-primary: #0a0a0f;
+        --bg-card: #13131a;
+        --bg-card-hover: #1a1a24;
+        --text-primary: #ffffff;
+        --text-secondary: #9999bb;
+        --border-color: #2a2a3a;
+        --accent-purple: #10b981;
+        --accent-teal: #059669;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Inter', system-ui, sans-serif;
+        overflow-x: hidden;
+      }
+
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-primary);
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #splash.fade-out {
+        opacity: 0;
+        transform: scale(1.04);
+        pointer-events: none;
+      }
+
+      .splash-bg {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      .splash-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: orbFloat 6s ease-in-out infinite;
+      }
+
+      .splash-orb-1 {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(108,99,255,0.35) 0%, transparent 70%);
+        top: -100px;
+        left: -100px;
+        animation-delay: 0s;
+      }
+
+      .splash-orb-2 {
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(0,212,170,0.25) 0%, transparent 70%);
+        bottom: -80px;
+        right: -80px;
+        animation-delay: -2s;
+      }
+
+      .splash-orb-3 {
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(255,107,53,0.2) 0%, transparent 70%);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-delay: -4s;
+      }
+
+      @keyframes orbFloat {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-30px) scale(1.05); }
+      }
+
+      .splash-content {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .splash-logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #6c63ff 0%, #00d4aa 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 40px rgba(108,99,255,0.5), 0 0 80px rgba(0,212,170,0.2);
+        animation: logoPulse 2.4s ease-in-out infinite;
+      }
+
+      @keyframes logoPulse {
+        0%, 100% { box-shadow: 0 0 40px rgba(108,99,255,0.5), 0 0 80px rgba(0,212,170,0.2); transform: scale(1); }
+        50% { box-shadow: 0 0 60px rgba(108,99,255,0.8), 0 0 120px rgba(0,212,170,0.4); transform: scale(1.05); }
+      }
+
+      .splash-logo svg {
+        width: 40px;
+        height: 40px;
+        color: white;
+      }
+
+      .splash-wordmark {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .splash-title {
+        font-size: 36px;
+        font-weight: 900;
+        letter-spacing: -1px;
+        background: linear-gradient(90deg, #fff 0%, #a89dff 50%, #00d4aa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: textShimmer 3s ease-in-out infinite;
+        background-size: 200% auto;
+      }
+
+      @keyframes textShimmer {
+        0% { background-position: 0% center; }
+        50% { background-position: 100% center; }
+        100% { background-position: 0% center; }
+      }
+
+      .splash-tagline {
+        font-size: 13px;
+        font-weight: 500;
+        color: #9999bb;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .splash-loader {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .splash-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #6c63ff;
+        animation: dotBounce 1.2s ease-in-out infinite;
+      }
+
+      .splash-dot:nth-child(1) { animation-delay: 0s; background: #6c63ff; }
+      .splash-dot:nth-child(2) { animation-delay: 0.2s; background: #8b7fff; }
+      .splash-dot:nth-child(3) { animation-delay: 0.4s; background: #00d4aa; }
+
+      @keyframes dotBounce {
+        0%, 80%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
+        40% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+      }
+
+      .splash-ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid rgba(108,99,255,0.2);
+        animation: ringExpand 3s ease-out infinite;
+      }
+
+      .splash-ring-1 { width: 120px; height: 120px; animation-delay: 0s; }
+      .splash-ring-2 { width: 160px; height: 160px; animation-delay: 0.6s; }
+      .splash-ring-3 { width: 200px; height: 200px; animation-delay: 1.2s; }
+
+      @keyframes ringExpand {
+        0% { transform: scale(0.8); opacity: 0.6; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+
+      .skip-link {
+        position: absolute;
+        top: -100%;
+        left: 16px;
+        z-index: 10000;
+        background: #6c63ff;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 0 0 8px 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: top 0.2s;
+      }
+
+      .skip-link:focus {
+        top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      (function() {
+        try {
+          var storage = localStorage.getItem('theme-storage');
+          var theme = 'light'; // default
+          if (storage) {
+            var parsed = JSON.parse(storage);
+            theme = parsed.state.theme;
+          }
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div id="splash" role="status" aria-label="Insta Coach is loading">
+      <div class="splash-bg">
+        <div class="splash-orb splash-orb-1"></div>
+        <div class="splash-orb splash-orb-2"></div>
+        <div class="splash-orb splash-orb-3"></div>
+      </div>
+
+      <div class="splash-content">
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+          <div class="splash-ring splash-ring-1"></div>
+          <div class="splash-ring splash-ring-2"></div>
+          <div class="splash-ring splash-ring-3"></div>
+          <div class="splash-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="splash-wordmark">
+          <div class="splash-title">Insta Coach</div>
+          <div class="splash-tagline">Find Your Perfect Coach</div>
+        </div>
+
+        <div class="splash-loader" aria-hidden="true">
+          <div class="splash-dot"></div>
+          <div class="splash-dot"></div>
+          <div class="splash-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="root"></div>
+
+    <script>
+      if (typeof window.global === 'undefined') {
+        window.global = window;
+      }
+
+      (function() {
+        var splash = document.getElementById('splash');
+        var observer = new MutationObserver(function() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            observer.disconnect();
+            splash.classList.add('fade-out');
+            setTimeout(function() {
+              if (splash && splash.parentNode) {
+                splash.parentNode.removeChild(splash);
+              }
+            }, 650);
+          }
+        });
+        observer.observe(document.getElementById('root'), { childList: true, subtree: false });
+
+        setTimeout(function() {
+          if (splash) {
+            splash.classList.add('fade-out');
+            setTimeout(function() {
+              if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+            }, 650);
+          }
+        }, 8000);
+      })();
+    </script>
+
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
