@@ -27,6 +27,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { to: '/my-coach', icon: <User size={20} />, label: 'My Coach' },
     { to: '/programs', icon: <Dumbbell size={20} />, label: 'My Programs' },
     { to: '/map', icon: <Globe size={20} />, label: 'Sweat Map' },
+<<<<<<< HEAD
+=======
+    {to: '/virtual-gym', icon: <Box size={20} />, label: 'Solo Trainer' },
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
     { to: '/bounties', icon: <Target size={20} />, label: 'Bounties' },
     { to: '/ai-trainer', icon: <Zap size={20} />, label: 'AI Trainer' },
     { to: '/chat', icon: <MessageCircle size={20} />, label: 'Messages' },
@@ -37,7 +41,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { to: '/trainer/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { to: '/trainer/clients', icon: <Users size={20} />, label: 'Clients' },
     { to: '/trainer/sessions', icon: <CalendarDays size={20} />, label: 'Sessions' },
+<<<<<<< HEAD
     { to: '/bounties', icon: <Target size={20} />, label: 'Bounties' },
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
     { to: '/trainer/profile', icon: <User size={20} />, label: 'Profile' },
     { to: '/chat', icon: <MessageCircle size={20} />, label: 'Messages' },
     { to: '/leaderboard', icon: <Trophy size={20} />, label: 'Leaderboard' }

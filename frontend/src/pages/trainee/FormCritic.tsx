@@ -1,7 +1,11 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
+<<<<<<< HEAD
 import { Upload, Camera, Play, CheckCircle, AlertCircle, Sparkles, ChevronRight, Brain, Send, User as UserIcon, Bot } from 'lucide-react'
+=======
+import { Upload, Camera, Play, CheckCircle, AlertCircle, Sparkles, ChevronRight, Brain } from 'lucide-react'
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import { toast } from 'sonner'
@@ -12,10 +16,13 @@ export default function FormCritic() {
   const [preview, setPreview] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [results, setResults] = useState<{ score: number, feedback: string[] } | null>(null)
+<<<<<<< HEAD
   const [messages, setMessages] = useState<{role: 'user'|'assistant', content: string}[]>([])
   const [inputMsg, setInputMsg] = useState('')
   const [isTyping, setIsTyping] = useState(false)
 
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -29,6 +36,7 @@ export default function FormCritic() {
   }
 
   const startAnalysis = async () => {
+<<<<<<< HEAD
     if (!video || !videoRef.current) return
     setAnalyzing(true)
     
@@ -68,6 +76,19 @@ export default function FormCritic() {
       
       setResults(data)
       setMessages([])
+=======
+    if (!video) return
+    setAnalyzing(true)
+    
+    try {
+      // In a real app we'd upload the video first
+      const { data } = await apiClient.post('/strength/analyze-form', { type: 'squat' })
+      
+      // Simulate analysis time
+      await new Promise(r => setTimeout(r, 3500))
+      
+      setResults(data)
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
       toast.success('Analysis complete!')
     } catch (err) {
       toast.error('AI Analysis failed. Please try again.')
@@ -76,6 +97,7 @@ export default function FormCritic() {
     }
   }
 
+<<<<<<< HEAD
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!inputMsg.trim() || !results) return
@@ -112,6 +134,8 @@ You must answer their questions clearly, practically, and using workout biomecha
     }
   }
 
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
   return (
     <>
       <Helmet><title>AI Form Critic — Insta Coach</title></Helmet>
@@ -239,6 +263,7 @@ You must answer their questions clearly, practically, and using workout biomecha
                        Pro Tip: Film from a 45-degree angle for the best AI joint tracking results.
                      </p>
                   </div>
+<<<<<<< HEAD
 
                   {/* Contextual Chat Integration */}
                   <div className="mt-8 border-t border-border-color pt-6">
@@ -290,6 +315,8 @@ You must answer their questions clearly, practically, and using workout biomecha
                     </form>
                   </div>
 
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
                 </motion.div>
               )}
             </Card>

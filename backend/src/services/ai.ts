@@ -160,6 +160,7 @@ export async function getFormTip(exercise: string): Promise<string> {
   const result = await getAIResponse(`Form tip for ${exercise}`, context);
   return result || 'Focus on controlled movements and proper breathing throughout the exercise.';
 }
+<<<<<<< HEAD
 
 export async function analyzeFormImages(imagesBase64: string[], exercise: string): Promise<{score: number, feedback: string[]}> {
   try {
@@ -217,3 +218,5 @@ Do not output markdown code blocks. Just the raw JSON string.`
     return { score: 7.5, feedback: ["Ensure steady pacing throughout the movement.", "Keep a neutral spine, watch for hyper-extension.", "Focus on breathing during the lift."] };
   }
 }
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff

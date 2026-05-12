@@ -2,7 +2,10 @@ import { Router } from 'express';
 import db from '../db.js';
 import { authenticate } from '../middleware/auth.js';
 import { v4 as uuidv4 } from 'uuid';
+<<<<<<< HEAD
 import { analyzeFormImages } from '../services/ai.js';
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 
 const router = Router();
 
@@ -45,6 +48,7 @@ router.post('/log', authenticate, async (req: any, res) => {
 
 // AI Form Analysis
 router.post('/analyze-form', authenticate, async (req: any, res) => {
+<<<<<<< HEAD
   const { videoUrl, type, images } = req.body;
   
   try {
@@ -64,11 +68,27 @@ router.post('/analyze-form', authenticate, async (req: any, res) => {
         "Engage your core more to increase stability."
       ];
     }
+=======
+  const { videoUrl, type } = req.body;
+  
+  try {
+    // Simulate AI analysis delay
+    const score = Math.random() * 3 + 7; // 7-10 score
+    const feedback = [
+      "Keep your back straighter during the bottom phase.",
+      "Great depth on your squats!",
+      "Engage your core more to increase stability."
+    ];
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 
     const id = uuidv4();
     await db.run(
       'INSERT INTO form_analysis (id, user_id, video_url, feedback_json, score) VALUES (?, ?, ?, ?, ?)',
+<<<<<<< HEAD
       id, req.user.id, videoUrl || 'vision_upload', JSON.stringify(feedback), score
+=======
+      id, req.user.id, videoUrl, JSON.stringify(feedback), score
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
     );
 
     res.json({ id, score, feedback });

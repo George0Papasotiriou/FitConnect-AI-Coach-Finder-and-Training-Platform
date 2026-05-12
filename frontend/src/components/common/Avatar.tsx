@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 import { useState } from 'react'
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 import type { UserStatus } from '../../store/onlineStore'
 
 interface AvatarProps {
@@ -77,16 +80,26 @@ function shouldPulse(status?: UserStatus, isOnline?: boolean): boolean {
 
 export default function Avatar({ src, name, size = 'md', isOnline, status, className = '', showStatus = true }: AvatarProps) {
   const hasStatus = status !== undefined || isOnline !== undefined
+<<<<<<< HEAD
   const [imgError, setImgError] = useState(false)
 
   return (
     <div className={`relative inline-block flex-shrink-0 ${className}`}>
       {src && !imgError ? (
+=======
+
+  return (
+    <div className={`relative inline-block flex-shrink-0 ${className}`}>
+      {src ? (
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
         <img
           src={src.startsWith('http') ? src : `http://localhost:3001${src}`}
           alt={name ? `${name}'s avatar` : 'User avatar'}
           className={`${sizes[size]} rounded-full object-cover ring-2 ring-border-color`}
+<<<<<<< HEAD
           onError={() => setImgError(true)}
+=======
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
         />
       ) : (
         <div

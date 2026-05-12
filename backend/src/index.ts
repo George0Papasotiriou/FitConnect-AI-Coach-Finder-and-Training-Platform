@@ -29,7 +29,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const server = createServer(app);
 
+<<<<<<< HEAD
 console.log('--- SYSTEM RESTART DETECTED V2 ---');
+=======
+console.log('--- SYSTEM RESTART DETECTED ---');
+>>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 console.log('Timestamp:', new Date().toISOString());
 
 // Get the correct PORT for Railway
