@@ -35,6 +35,7 @@ import VirtualGym from './pages/shared/VirtualGym'
 import IncomingCallModal from './components/call/IncomingCallModal'
 import SocketManager from './components/layout/SocketManager'
 import ProgressHub from './pages/shared/ProgressHub'
+import GlobalCallOverlay from './components/call/GlobalCallOverlay'
 
 function PrivateRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, token } = useAuthStore()
@@ -208,6 +209,7 @@ export default function App() {
       {token && user && <VoiceOrb />}
       {token && user && <IncomingCallModal />}
       {token && user && <SocketManager />}
+      {token && user && <GlobalCallOverlay />}
       {show2FA && <TwoFactorSetup onComplete={handle2FAComplete} onSkip={handle2FASkip} />}
     </>
   )

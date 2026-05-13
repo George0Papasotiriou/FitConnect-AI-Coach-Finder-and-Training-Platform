@@ -11,6 +11,8 @@ interface VideoCallProps {
   trainerName: string
   onClose: () => void
   isAdhoc?: boolean
+  isMinimized?: boolean
+  onMinimize?: () => void
 }
 
 function formatDuration(seconds: number) {
@@ -19,7 +21,7 @@ function formatDuration(seconds: number) {
   return `${m}:${s}`
 }
 
-export default function VideoCall({ sessionId, isInitiator, trainerName, onClose, isAdhoc }: VideoCallProps) {
+export default function VideoCall({ sessionId, isInitiator, trainerName, onClose, isAdhoc, isMinimized, onMinimize }: VideoCallProps) {
   const [showRating, setShowRating] = useState(false)
   const [isSketchMode, setIsSketchMode] = useState(false)
   const [showAI, setShowAI] = useState(false)
@@ -128,7 +130,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="fixed inset-0 z-[100] bg-black flex flex-col md:flex-row touch-none"
+        className={`${isMinimized ? 'relative w-full h-full' : 'fixed inset-0 z-[100]'} bg-black flex flex-col md:flex-row touch-none`}
         aria-label="Video call"
         onClick={resetControlsTimeout}
         onMouseMove={resetControlsTimeout}
@@ -175,7 +177,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
             dragConstraints={containerRef}
             dragElastic={0.1}
             dragMomentum={false}
-            className="absolute z-20 top-4 right-4 w-28 h-40 md:w-32 md:h-48 rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl cursor-move bg-gray-900"
+            className={`absolute z-20 ${isMinimized ? 'top-2 right-2 w-16 h-24' : 'top-4 right-4 w-28 h-40 md:w-32 md:h-48'} rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl cursor-move bg-gray-900`}
             aria-label="Your video"
             style={{ touchAction: 'none' }}
           >
@@ -190,7 +192,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
 
           {/* Header Info Banner */}
           <AnimatePresence>
-            {showControls && (
+            {showControls && !isMinimized && (
                 <motion.div 
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -212,7 +214,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
 
         {/* Controls Bar */}
         <AnimatePresence>
-            {showControls && (
+            {showControls && !isMinimized && (
                 <motion.div 
                     initial={{ opacity: 0, y: 100 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -233,6 +235,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
                         }}
                         onToggleAI={() => setShowAI(!showAI)}
                         isAIActive={showAI}
+                        onMinimize={onMinimize}
                         onEndCall={handleEnd}
                     />
                 </motion.div>
