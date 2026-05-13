@@ -52,10 +52,12 @@ export default function InCallChat({
           const chatMsg: ChatMessage = {
             id: `remote-${Date.now()}-${Math.random()}`,
             sender: msg.sender || 'User',
-            content: msg.content,
+            content: msg.content ?? '',
             timestamp: msg.timestamp || Date.now(),
             isOwn: false,
-            type: msg.messageType || 'text',
+            type: (['text', 'image', 'file'] as const).includes(msg.messageType as 'text' | 'image' | 'file')
+              ? (msg.messageType as 'text' | 'image' | 'file')
+              : 'text',
             fileName: msg.fileName,
             fileData: msg.fileData,
             fileSize: msg.fileSize
