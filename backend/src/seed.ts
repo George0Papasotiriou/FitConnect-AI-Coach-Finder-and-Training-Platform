@@ -228,6 +228,18 @@ export async function seed() {
       uuid(), traineeId, 'achievement', '🏆 First Steps', 'You\'ve unlocked your first achievement! Keep going!', '/achievements', '{}');
   }
 
+  console.log('💰 Seeding default bounties...');
+  const defaultBounties = [
+    { title: 'Push-up Challenge', description: 'Perform 50 push-ups in a single session.', xp: 150, type: 'Strength', goal: 50 },
+    { title: 'Morning Run', description: 'Run for 30 minutes before 9 AM.', xp: 300, type: 'Cardio', goal: 30 },
+    { title: 'Plank Master', description: 'Hold a plank for 3 minutes.', xp: 200, type: 'Core', goal: 3 }
+  ];
+
+  for (const b of defaultBounties) {
+    await db.run('INSERT INTO bounties (id, trainer_id, title, description, xp_reward, exercise_type, goal_value) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      uuid(), adminId, b.title, b.description, b.xp, b.type, b.goal);
+  }
+
   console.log('✅ Seed complete!\n');
   console.log('📧 Demo accounts:');
   console.log('   Admin:      admin@fitconnect.com  / admin123');

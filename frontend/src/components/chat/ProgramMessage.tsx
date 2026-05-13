@@ -2,30 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, Calendar, ChevronRight, ChevronLeft, 
-<<<<<<< HEAD
   Dumbbell, Clock, Info, ExternalLink, Map, X
-=======
-  Dumbbell, Clock, Info, ExternalLink, Map
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 } from 'lucide-react';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 import apiClient from '../../api/client';
-<<<<<<< HEAD
 import ProgramBuilder from '../trainer/ProgramBuilder';
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 
 export default function ProgramMessage({ content }: { content: string }) {
   const [programData, setProgramData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState(0);
-<<<<<<< HEAD
   const [isEditingProgram, setIsEditingProgram] = useState(false);
-=======
-  const [showDetails, setShowDetails] = useState(false);
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 
   useEffect(() => {
     try {
@@ -147,18 +136,12 @@ export default function ProgramMessage({ content }: { content: string }) {
             size="sm" 
             variant="ghost" 
             className="!py-1 !px-2 !text-[10px] !rounded-full"
-<<<<<<< HEAD
             onClick={() => setIsEditingProgram(true)}
-=======
-            onClick={() => window.open(`/programs/${programData.id}`, '_blank')}
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
           >
             Open Full View <ExternalLink size={10} className="ml-1" />
           </Button>
         </div>
       </div>
-<<<<<<< HEAD
-
       <AnimatePresence>
         {isEditingProgram && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
@@ -179,8 +162,6 @@ export default function ProgramMessage({ content }: { content: string }) {
           </div>
         )}
       </AnimatePresence>
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
     </motion.div>
   );
 }

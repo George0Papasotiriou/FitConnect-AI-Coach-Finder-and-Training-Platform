@@ -46,7 +46,11 @@ export function useVoiceAI(): UseVoiceAIReturn {
   const processVoiceCommand = useCallback(async (text: string) => {
     setIsProcessing(true)
     try {
-      const result = await aiApi.sendVoiceMessage({ transcript: text })
+      // Inject strict window coordinates for accessibility awareness
+      const result = await aiApi.sendVoiceMessage({ 
+         transcript: text,
+         context: window.location.pathname
+      })
       setResponse(result.response)
 
       if (result.action) {

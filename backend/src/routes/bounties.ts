@@ -11,8 +11,8 @@ router.get('/active', authenticate, async (req: any, res) => {
     const bounties = await db.all(`
       SELECT b.*, ub.status 
       FROM bounties b
-      LEFT JOIN user_bounties ub ON b.id = ub.bounty_id AND ub.user_id = ?
-      WHERE b.expires_at IS NULL OR b.expires_at > NOW()
+      LEFT JOIN user_bounties ub ON (b.id = ub.bounty_id AND ub.user_id = ?)
+      WHERE b.expires_at IS NULL OR b.expires_at > CURRENT_TIMESTAMP
     `, req.user.id);
     res.json(bounties);
   } catch (error) {
@@ -59,7 +59,7 @@ router.post('/complete/:id', authenticate, async (req: any, res) => {
   }
 });
 
-<<<<<<< HEAD
+
 // Get trainer's created bounties
 router.get('/trainer', authenticate, async (req: any, res) => {
   if (req.user.role !== 'trainer') return res.status(403).json({ error: 'Trainers only' });
@@ -83,6 +83,5 @@ router.delete('/:id', authenticate, async (req: any, res) => {
   }
 });
 
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
+
 export default router;

@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
-<<<<<<< HEAD
 import { Trophy, Zap, Clock, CheckCircle2, ShieldCheck, Target, Award, Sparkles, Plus, Trash2, X } from 'lucide-react'
-=======
-import { Trophy, Zap, Clock, CheckCircle2, ShieldCheck, Target, Award, Sparkles } from 'lucide-react'
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { useBountyStore } from '../../store/bountyStore'
@@ -18,7 +14,6 @@ export default function BountyBoard() {
   const { bounties, setBounties, completeBounty } = useBountyStore()
   const [loading, setLoading] = useState(true)
 
-<<<<<<< HEAD
   // Trainer specific state
   const [isCreating, setIsCreating] = useState(false)
   const [formData, setFormData] = useState({
@@ -29,20 +24,14 @@ export default function BountyBoard() {
     goalValue: 10
   })
 
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
   useEffect(() => {
     fetchBounties()
   }, [])
 
   const fetchBounties = async () => {
     try {
-<<<<<<< HEAD
       const endpoint = user?.role === 'trainer' ? '/bounties/trainer' : '/bounties/active'
       const { data } = await apiClient.get(endpoint)
-=======
-      const { data } = await apiClient.get('/bounties/active')
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
       setBounties(data)
     } catch (err) {
       toast.error('Failed to sync bounties')
@@ -63,7 +52,6 @@ export default function BountyBoard() {
     }
   }
 
-<<<<<<< HEAD
   const handleDelete = async (id: string) => {
     try {
       await apiClient.delete(`/bounties/${id}`)
@@ -92,8 +80,6 @@ export default function BountyBoard() {
     }
   }
 
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
   return (
     <>
       <Helmet><title>Bounty Board — Insta Coach</title></Helmet>
@@ -102,7 +88,6 @@ export default function BountyBoard() {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl font-black text-text-primary flex items-center gap-3">
-<<<<<<< HEAD
                <Trophy className="text-yellow-400" /> {user?.role === 'trainer' ? 'Bounty Management Hub' : 'Daily Bounty Board'}
             </h1>
             <p className="text-text-secondary mt-1">
@@ -195,23 +180,6 @@ export default function BountyBoard() {
               </form>
            </Card>
         ) : (
-=======
-               <Trophy className="text-yellow-400" /> Daily Bounty Board
-            </h1>
-            <p className="text-text-secondary mt-1">Special missions from your coaches to accelerate your progress.</p>
-          </div>
-          <Card className="!p-3 border-accent-purple/20 bg-accent-purple/5 flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-accent-purple flex items-center justify-center shadow-lg">
-                <ShieldCheck className="text-white" />
-             </div>
-             <div>
-                <p className="text-[10px] font-black uppercase text-text-secondary">Elite Status</p>
-                <p className="text-xs font-bold text-text-primary">Vanguard Tier</p>
-             </div>
-          </Card>
-        </header>
-
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
            {loading ? (
              [1, 2, 3, 4].map(i => <div key={i} className="h-48 rounded-3xl bg-bg-card animate-pulse" />)
@@ -258,15 +226,11 @@ export default function BountyBoard() {
                                </div>
                                <span className="text-[10px] font-black uppercase text-text-secondary">{b.goalValue} {b.exerciseType}</span>
                             </div>
-<<<<<<< HEAD
                             {user?.role === 'trainer' ? (
                               <Button size="sm" variant="ghost" className="!text-red-400 hover:bg-red-500/10" onClick={() => handleDelete(b.id)}>
                                  <Trash2 size={16} className="mr-2" /> Revoke
                               </Button>
                             ) : b.status === 'completed' ? (
-=======
-                            {b.status === 'completed' ? (
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
                               <span className="text-xs font-bold text-accent-teal italic">Bounty Claimed</span>
                             ) : (
                               <Button size="sm" variant="primary" onClick={() => handleComplete(b.id)}>Claim Reward</Button>
@@ -283,28 +247,18 @@ export default function BountyBoard() {
              </AnimatePresence>
            )}
         </div>
-<<<<<<< HEAD
         )}
 
         {!isCreating && bounties.length === 0 && !loading && (
-=======
-
-        {bounties.length === 0 && !loading && (
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
           <div className="py-20 text-center space-y-4">
              <div className="w-20 h-20 rounded-3xl bg-bg-card mx-auto flex items-center justify-center border border-border-color">
                 <Clock className="text-text-secondary" size={32} />
              </div>
              <div>
-<<<<<<< HEAD
                 <p className="font-bold text-text-primary">{user?.role === 'trainer' ? 'No active bounties' : 'All bounties claimed!'}</p>
                 <p className="text-xs text-text-secondary">
                   {user?.role === 'trainer' ? "You haven't published any active missions. Deploy one!" : "Check back tomorrow for fresh daily missions."}
                 </p>
-=======
-                <p className="font-bold text-text-primary">All bounties claimed!</p>
-                <p className="text-xs text-text-secondary">Check back tomorrow for fresh daily missions.</p>
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
              </div>
           </div>
         )}

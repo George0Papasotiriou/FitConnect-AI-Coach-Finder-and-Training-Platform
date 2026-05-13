@@ -3,11 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate } from 'react-router-dom'
 import { 
   Camera, Brain, Heart, Sun, Search, 
-<<<<<<< HEAD
   ArrowRight, Sparkles, TrendingUp, ShieldCheck, Box
-=======
-  ArrowRight, Sparkles, TrendingUp, ShieldCheck 
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
 } from 'lucide-react'
 import Card from '../../components/common/Card'
 
@@ -68,7 +64,6 @@ export default function ProgressHub() {
       color: 'text-accent-purple',
       bg: 'bg-accent-purple/10',
       gradient: 'from-accent-purple/20 to-transparent'
-<<<<<<< HEAD
     },
     { 
       to: '/virtual-gym', 
@@ -78,8 +73,6 @@ export default function ProgressHub() {
       color: 'text-indigo-400',
       bg: 'bg-indigo-400/10',
       gradient: 'from-indigo-400/20 to-transparent'
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
     }
   ]
 

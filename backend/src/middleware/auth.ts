@@ -21,11 +21,21 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
     const user = await db.get('SELECT id, name, email, role, is_banned FROM users WHERE id = ?', payload.id);
-    if (!user) { res.status(401).json({ message: 'User not found' }); return; }
-    if (user.isBanned) { res.status(403).json({ message: 'Account is suspended' }); return; }
+    if (!user) { 
+      console.warn('🔓 Auth: User not found for ID:', payload.id);
+      res.status(401).json({ message: 'User not found' }); 
+      return; 
+    }
+    if (user.isBanned) { 
+      console.warn('Locked Auth: User is banned:', user.id);
+      res.status(403).json({ message: 'Account is suspended' }); 
+      return; 
+    }
+    console.log(`🔐 Auth: Success for ${user.name} (${user.role})`);
     req.user = { id: user.id, name: user.name, email: user.email, role: user.role };
     next();
-  } catch {
+  } catch (err: any) {
+    console.error('🔓 Auth: Failed with error:', err.message);
     res.status(401).json({ message: 'Invalid or expired token' });
   }
 };

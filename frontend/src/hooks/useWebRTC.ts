@@ -178,36 +178,22 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
 
   const toggleMute = useCallback(() => {
     if (localStreamRef.current) {
-<<<<<<< HEAD
       const audioTracks = localStreamRef.current.getAudioTracks()
       if (audioTracks.length > 0) {
         const newState = !audioTracks[0].enabled
         audioTracks.forEach(t => t.enabled = newState)
         setIsMuted(!newState)
-=======
-      const audioTrack = localStreamRef.current.getAudioTracks()[0]
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled
-        setIsMuted(!audioTrack.enabled)
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
       }
     }
   }, [])
 
   const toggleCamera = useCallback(() => {
     if (localStreamRef.current) {
-<<<<<<< HEAD
       const videoTracks = localStreamRef.current.getVideoTracks()
       if (videoTracks.length > 0) {
         const newState = !videoTracks[0].enabled
         videoTracks.forEach(t => t.enabled = newState)
         setIsCameraOff(!newState)
-=======
-      const videoTrack = localStreamRef.current.getVideoTracks()[0]
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled
-        setIsCameraOff(!videoTrack.enabled)
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
       }
     }
   }, [])
@@ -218,7 +204,6 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
         const screenTrack = screenStream.getVideoTracks()[0]
         const sender = peerRef.current
-<<<<<<< HEAD
         const localStream = localStreamRef.current
         if (sender && localStream) {
           const videoTrack = localStream.getVideoTracks()[0]
@@ -226,25 +211,15 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
             sender.replaceTrack(videoTrack, screenTrack, localStream)
             videoTrack.enabled = false
           }
-=======
-        if (sender && localStreamRef.current) {
-          const videoTrack = localStreamRef.current.getVideoTracks()[0]
-          if (videoTrack) videoTrack.enabled = false
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
           if (localVideoRef.current) localVideoRef.current.srcObject = screenStream
           setIsScreenSharing(true)
           screenTrack.onended = () => {
             setIsScreenSharing(false)
-<<<<<<< HEAD
             if (localVideoRef.current) localVideoRef.current.srcObject = localStream
             if (videoTrack) {
               sender.replaceTrack(screenTrack, videoTrack, localStream)
               videoTrack.enabled = true
             }
-=======
-            if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current
-            if (videoTrack) videoTrack.enabled = true
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
           }
         }
       } catch (err) {
@@ -252,7 +227,6 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
       }
     } else {
       setIsScreenSharing(false)
-<<<<<<< HEAD
       if (localVideoRef.current?.srcObject instanceof MediaStream) {
         const srcStream = localVideoRef.current.srcObject
         const screenTrack = srcStream.getVideoTracks()[0]
@@ -261,8 +235,6 @@ export function useWebRTC({ sessionId, isInitiator, onCallEnded }: UseWebRTCProp
           if (screenTrack.onended) screenTrack.onended(new Event('ended'))
         }
       }
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
       if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current
     }
   }, [isScreenSharing])

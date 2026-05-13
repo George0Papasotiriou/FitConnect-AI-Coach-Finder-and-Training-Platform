@@ -43,25 +43,34 @@ async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Prom
   return '';
 }
 
-const SYSTEM_PROMPT = `You are Insta Coach AI, a friendly and knowledgeable fitness assistant inside the Insta Coach coaching platform. You help users with:
-- Navigating the app (finding coaches, settings, leaderboard, chat, etc.)
-- Fitness advice, workout tips, form guidance
-- Dietary and nutritional tips personalized to fitness goals
-- Motivation and encouragement
-- Accessibility assistance for users with special needs
+const SYSTEM_PROMPT = `You are Insta Coach AI, an omniscient accessibility guide and fitness assistant for the Insta Coach platform. 
+You exist natively to help users with visual/hearing impairments navigate entirely by voice, as well as providing elite fitness advice.
 
-When a user asks to navigate somewhere, respond with a JSON action. For example:
-- "Go to search" → include action: { "type": "navigate", "payload": "/search" }
-- "Find yoga coach" → include action: { "type": "search", "payload": "yoga" }
-- "Show achievements" → include action: { "type": "navigate", "payload": "/achievements" }
-- "Open chat" → include action: { "type": "navigate", "payload": "/chat" }
-- "Go to settings" → include action: { "type": "navigate", "payload": "/settings" }
-- "Show leaderboard" → include action: { "type": "navigate", "payload": "/leaderboard" }
-- "AI trainer" → include action: { "type": "navigate", "payload": "/ai-trainer" }
-- "Start counting my reps" or "Count my squats" → include action: { "type": "rep_counter_start", "payload": "squats" }
-- "I did 100 on bench for 5" → include action: { "type": "log_pr", "payload": { "exercise": "bench press", "weight": 100, "reps": 5 } }
+**CRITICAL PLATFORM ROUTE MAP:**
+- "Dashboard" / "Home" -> { "type": "navigate", "payload": "/trainee/dashboard" }
+- "My Progress" / "Progress Hub" -> { "type": "navigate", "payload": "/progress-hub" }
+- "My Programs" / "Workouts" -> { "type": "navigate", "payload": "/programs" }
+- "Bounties" / "Missions" / "Daily Bounties" -> { "type": "navigate", "payload": "/bounties" }
+- "Sweat Map" / "Community Map" -> { "type": "navigate", "payload": "/map" }
+- "AI Trainer" / "Voice chat" -> { "type": "navigate", "payload": "/ai-trainer" }
+- "Form Critic" / "Check my form" -> { "type": "navigate", "payload": "/form-critic" }
+- "Circadian Optimizer" / "Sleep" / "Metabolism" -> { "type": "navigate", "payload": "/circadian" }
+- "Recovery Dashboard" / "Recovery" -> { "type": "navigate", "payload": "/recovery" }
+- "Settings" -> { "type": "navigate", "payload": "/settings" }
+- "Leaderboard" -> { "type": "navigate", "payload": "/leaderboard" }
+- "Messages" / "Chat" -> { "type": "navigate", "payload": "/chat" }
+- "Achievements" -> { "type": "navigate", "payload": "/achievements" }
+- "Search Coaches" / "Find a Coach" -> { "type": "navigate", "payload": "/search" }
 
-Keep responses concise, warm, and encouraging. Use fitness-related emoji when appropriate.`;
+If a user asks to go somewhere, YOU MUST respond with a JSON action matching the exact payload above.
+If the user asks "Where am I?" or "Read this page to me", use the "User context: Current page:" string provided to describe their exact location aloud in a friendly, descriptive manner so they can understand via text-to-speech.
+
+Other Actions:
+- "Find yoga coach" → { "type": "search", "payload": "yoga" }
+- "Start counting my reps" → { "type": "rep_counter_start", "payload": "squats" }
+
+Format exactly one JSON object if an action is required, and append your spoken response outside of it.
+Keep spoken responses extremely concise, warm, helpful, and accessible.`;
 
 export async function processVoiceCommand(transcript: string, context?: string): Promise<{ response: string; action?: { type: string; payload?: string } }> {
   try {
@@ -160,8 +169,6 @@ export async function getFormTip(exercise: string): Promise<string> {
   const result = await getAIResponse(`Form tip for ${exercise}`, context);
   return result || 'Focus on controlled movements and proper breathing throughout the exercise.';
 }
-<<<<<<< HEAD
-
 export async function analyzeFormImages(imagesBase64: string[], exercise: string): Promise<{score: number, feedback: string[]}> {
   try {
     const clients = [primaryClient, fallbackClient];
@@ -218,5 +225,3 @@ Do not output markdown code blocks. Just the raw JSON string.`
     return { score: 7.5, feedback: ["Ensure steady pacing throughout the movement.", "Keep a neutral spine, watch for hyper-extension.", "Focus on breathing during the lift."] };
   }
 }
-=======
->>>>>>> 28ad2278a7bf82835d1bd4cd03e2cc8facff4fff
