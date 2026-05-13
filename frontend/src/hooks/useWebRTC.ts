@@ -3,6 +3,18 @@ import SimplePeer from 'simple-peer'
 import { useSocket } from './useSocket'
 import { toast } from 'sonner'
 
+export interface DataMessage {
+  type: string
+  subtype?: string
+  sender?: string
+  content?: string
+  messageType?: string
+  timestamp?: number
+  fileName?: string
+  fileData?: string
+  fileSize?: number
+}
+
 interface UseWebRTCProps {
   sessionId: string
   isInitiator: boolean
