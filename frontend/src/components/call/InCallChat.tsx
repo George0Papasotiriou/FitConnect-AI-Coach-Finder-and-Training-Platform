@@ -1,7 +1,28 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Paperclip, X, Image as ImageIcon, File as FileIcon, Download } from 'lucide-react'
-import type { DataMessage } from '../../hooks/useWebRTC'
+
+// DataMessage interface used by WebRTC data channel
+export interface DataMessage {
+  type: string
+  subtype?: string
+  sender?: string
+  content?: string
+  messageType?: 'text' | 'image' | 'file'
+  fileName?: string
+  fileData?: string
+  fileSize?: number
+  timestamp?: number
+  [key: string]: any
+}
 
 interface ChatMessage {
   id: string
@@ -52,7 +73,7 @@ export default function InCallChat({
           const chatMsg: ChatMessage = {
             id: `remote-${Date.now()}-${Math.random()}`,
             sender: msg.sender || 'User',
-            content: msg.content,
+            content: msg.content || '',
             timestamp: msg.timestamp || Date.now(),
             isOwn: false,
             type: msg.messageType || 'text',

@@ -1,10 +1,20 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import { useState, useMemo, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
-import { Sun, Moon, Zap, Clock, Activity, Sparkles, Brain, Info, Coffee, Utensils, Copy, Check, ChevronDown, Trophy } from 'lucide-react'
+import { Sun, Moon, Zap, Clock, Activity, Sparkles, Brain, Info, Coffee, Utensils, Copy, Check, ChevronDown, Trophy, Heart, Dumbbell, TrendingUp, Shield, AlertTriangle, Target } from 'lucide-react'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
 import { toast } from 'sonner'
+import { useWorkoutStore, RECOVERY_HOURS } from '../../store/workoutStore'
+import { useStrengthStore } from '../../store/strengthStore'
 
 type Chronotype = 'early' | 'balanced' | 'night'
 
@@ -15,6 +25,21 @@ const CHRONO_LABELS: Record<Chronotype, { label: string; emoji: string; desc: st
   night: { label: 'Night Owl', emoji: '🦉', desc: 'Later riser, peaks in the evening' },
 }
 
+const MUSCLE_DISPLAY: Record<string, { label: string; emoji: string }> = {
+  chest: { label: 'Chest', emoji: '🫁' },
+  upperBack: { label: 'Upper Back', emoji: '🔙' },
+  lowerBack: { label: 'Lower Back', emoji: '🦴' },
+  deltoids: { label: 'Shoulders', emoji: '🏔️' },
+  biceps: { label: 'Biceps', emoji: '💪' },
+  triceps: { label: 'Triceps', emoji: '🦾' },
+  forearms: { label: 'Forearms', emoji: '🤝' },
+  quads: { label: 'Quads', emoji: '🦵' },
+  hamstrings: { label: 'Hamstrings', emoji: '🦿' },
+  glutes: { label: 'Glutes', emoji: '🍑' },
+  calves: { label: 'Calves', emoji: '🦶' },
+  core: { label: 'Core', emoji: '🎯' },
+}
+
 function formatHourMin(decimalHours: number): string {
   const h = ((Math.floor(decimalHours) % 24) + 24) % 24
   const m = Math.round((decimalHours - Math.floor(decimalHours)) * 60) % 60
@@ -22,13 +47,16 @@ function formatHourMin(decimalHours: number): string {
 }
 
 export default function CircadianOptimizer() {
-  const [wakeHour, setWakeHour] = useState(7) // 7 AM default
-  const [sleepDuration, setSleepDuration] = useState(8) // hours
+  const [wakeHour, setWakeHour] = useState(7)
+  const [sleepDuration, setSleepDuration] = useState(8)
   const [chronotype, setChronotype] = useState<Chronotype>('balanced')
   const [currentTime, setCurrentTime] = useState(new Date())
   const [copied, setCopied] = useState(false)
 
-  // Update current time every minute
+  // Workout & strength data integration
+  const { completedWorkouts, getMuscleRecoveryStatus, getLastWorkoutForMuscle } = useWorkoutStore()
+  const { fatigue: muscleFatigue } = useStrengthStore()
+
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(interval)
@@ -36,72 +64,157 @@ export default function CircadianOptimizer() {
 
   const shift = CHRONO_SHIFT[chronotype]
 
-  // Core calculations based on wake time + chronotype
   const calculations = useMemo(() => {
     const wake = wakeHour + shift
     const sleep = wake + (24 - sleepDuration)
-    
-    // Metabolic peak: 9-12 hours after waking
     const peakStart = wake + 9
     const peakEnd = wake + 12.5
-    
-    // Cortisol spike: 30-60 min after waking
     const cortisolStart = wake
     const cortisolEnd = wake + 1.5
-    
-    // Adrenal recovery: 2 hours before sleep
     const recoveryStart = sleep - 2
-    
-    // Meal timing
-    const breakfast = wake + 1 // 1 hour after waking
-    const preWorkout = peakStart - 1.5 // 1.5h before peak
-    const postWorkout = peakEnd + 0.5 // 30min after peak
-    const lastMeal = sleep - 3 // 3h before sleep
-
-    return {
-      peakStart, peakEnd, cortisolStart, cortisolEnd,
-      recoveryStart, sleep, breakfast, preWorkout, postWorkout, lastMeal
-    }
+    const breakfast = wake + 1
+    const preWorkout = peakStart - 1.5
+    const postWorkout = peakEnd + 0.5
+    const lastMeal = sleep - 3
+    return { peakStart, peakEnd, cortisolStart, cortisolEnd, recoveryStart, sleep, breakfast, preWorkout, postWorkout, lastMeal }
   }, [wakeHour, sleepDuration, shift])
+
+  // ── Workout-Aware Data ──
+  const lastWorkout = completedWorkouts.length > 0 ? completedWorkouts[0] : null
+  const lastWorkoutHoursAgo = lastWorkout
+    ? (Date.now() - new Date(lastWorkout.finishedAt).getTime()) / (1000 * 60 * 60)
+    : null
+
+  // Per-muscle recovery status
+  const muscleRecovery = useMemo(() => {
+    const allMuscles = Object.keys(RECOVERY_HOURS)
+    return allMuscles.map(muscle => {
+      const status = getMuscleRecoveryStatus(muscle)
+      const lastHit = getLastWorkoutForMuscle(muscle)
+      const fatigue = muscleFatigue[muscle]?.fatigueLevel || 0
+      return {
+        muscle,
+        ...status,
+        lastHit,
+        fatigue,
+        display: MUSCLE_DISPLAY[muscle] || { label: muscle, emoji: '💠' },
+      }
+    }).sort((a, b) => a.percent - b.percent) // Sort: most fatigued first
+  }, [getMuscleRecoveryStatus, getLastWorkoutForMuscle, muscleFatigue, completedWorkouts])
+
+  const readyMuscles = muscleRecovery.filter(m => m.percent >= 100)
+  const recoveringMuscles = muscleRecovery.filter(m => m.percent < 100 && m.percent > 0)
+  const freshMuscles = muscleRecovery.filter(m => m.lastHit === null)
+
+  // Overall training readiness (0-100)
+  const trainingReadiness = useMemo(() => {
+    if (completedWorkouts.length === 0) return 85 // Default if no workout data
+    const avgRecovery = muscleRecovery.reduce((sum, m) => sum + m.percent, 0) / muscleRecovery.length
+    const cnsRecovery = lastWorkoutHoursAgo != null ? Math.min(100, (lastWorkoutHoursAgo / 24) * 100) : 100
+    return Math.round(avgRecovery * 0.6 + cnsRecovery * 0.4)
+  }, [muscleRecovery, lastWorkoutHoursAgo, completedWorkouts])
+
+  // Smart next-workout suggestion
+  const nextWorkoutSuggestion = useMemo(() => {
+    const ready = readyMuscles.map(m => m.muscle)
+    const hasPush = ready.some(m => ['chest', 'deltoids', 'triceps'].includes(m))
+    const hasPull = ready.some(m => ['upperBack', 'lowerBack', 'biceps'].includes(m))
+    const hasLegs = ready.some(m => ['quads', 'hamstrings', 'glutes', 'calves'].includes(m))
+
+    if (trainingReadiness < 40) return { type: 'REST', label: 'Active Recovery Day', desc: 'Your body needs rest. Try light stretching, walking, or yoga.', color: 'text-red-400', emoji: '🧘' }
+    if (trainingReadiness < 65) return { type: 'LIGHT', label: 'Light Session', desc: 'Moderate activity is fine. Focus on recovered muscle groups only.', color: 'text-orange-400', emoji: '🚶' }
+
+    if (hasPush && !hasPull) return { type: 'PUSH', label: 'Push Day (Chest + Shoulders + Triceps)', desc: 'Your pushing muscles are fully recovered and ready for heavy compounds.', color: 'text-accent-teal', emoji: '🏋️' }
+    if (hasPull && !hasPush) return { type: 'PULL', label: 'Pull Day (Back + Biceps)', desc: 'Your pulling muscles are primed. Focus on rows and pulldowns.', color: 'text-accent-teal', emoji: '💪' }
+    if (hasLegs) return { type: 'LEGS', label: 'Leg Day (Quads + Hamstrings + Glutes)', desc: 'Lower body is recovered. Time for squats and deadlifts.', color: 'text-accent-teal', emoji: '🦵' }
+    if (hasPush && hasPull) return { type: 'UPPER', label: 'Upper Body Day', desc: 'All upper body groups are ready. Hit a full upper session.', color: 'text-accent-purple', emoji: '⚡' }
+
+    return { type: 'FULL', label: 'Full Body Session', desc: 'All muscle groups are recovered. Choose your focus.', color: 'text-accent-teal', emoji: '🔥' }
+  }, [readyMuscles, trainingReadiness])
 
   // Generate 24 data points for the metabolic curve
   const dataPoints = useMemo(() => {
     return Array.from({ length: 24 }, (_, i) => {
       const hour = (wakeHour + i) % 24
       const hoursFromWake = i
-      // Metabolic curve: low in morning, peak 9-12h after wake, drops before sleep
       const baseCurve = Math.sin((hoursFromWake - 3) * Math.PI / 12) * 40 + 50
-      // Chronotype adjustment
-      const chronoAdjust = chronotype === 'early' ? (hoursFromWake < 10 ? 8 : -5) : 
+      const chronoAdjust = chronotype === 'early' ? (hoursFromWake < 10 ? 8 : -5) :
                            chronotype === 'night' ? (hoursFromWake > 10 ? 8 : -5) : 0
       const metabolicRate = Math.max(5, Math.min(95, baseCurve + chronoAdjust + (Math.sin(hoursFromWake * 0.5) * 5)))
-      
       const isPeak = hoursFromWake >= 9 && hoursFromWake <= 12.5
       const isCortisol = hoursFromWake <= 1.5
       const isSleep = hoursFromWake >= (24 - sleepDuration)
-      
-      return { hour, metabolicRate, isPeak, isCortisol, isSleep, hoursFromWake }
-    })
-  }, [wakeHour, sleepDuration, chronotype, shift])
 
-  // Current time position on chart
+      // Check if user worked out during this hour
+      const wasWorkoutHour = lastWorkout ? (() => {
+        const workoutStart = new Date(lastWorkout.startedAt)
+        const workoutEnd = new Date(lastWorkout.finishedAt)
+        const today = new Date()
+        if (workoutStart.toDateString() !== today.toDateString()) return false
+        const startH = workoutStart.getHours()
+        const endH = workoutEnd.getHours()
+        return hour >= startH && hour <= endH
+      })() : false
+
+      return { hour, metabolicRate, isPeak, isCortisol, isSleep, hoursFromWake, wasWorkoutHour }
+    })
+  }, [wakeHour, sleepDuration, chronotype, shift, lastWorkout])
+
   const currentHourDecimal = currentTime.getHours() + currentTime.getMinutes() / 60
   const currentIndexApprox = useMemo(() => {
     const hoursFromWake = ((currentHourDecimal - wakeHour) % 24 + 24) % 24
     return (hoursFromWake / 24) * 100
   }, [currentHourDecimal, wakeHour])
 
-  // AI Insights that update based on inputs
+  // Workout-aware AI insights
   const insights = useMemo(() => {
-    const items = []
-    
+    const items: { icon: JSX.Element; title: string; color: string; text: string }[] = []
+
+    // Workout-specific insight
+    if (lastWorkout && lastWorkoutHoursAgo != null) {
+      if (lastWorkoutHoursAgo < 2) {
+        items.push({
+          icon: <Dumbbell size={14} className="text-green-400" />,
+          title: 'POST-WORKOUT WINDOW',
+          color: 'text-green-400',
+          text: `You finished ${lastWorkout.exercises.length} exercise${lastWorkout.exercises.length > 1 ? 's' : ''} ${Math.round(lastWorkoutHoursAgo * 60)}min ago. Your anabolic window is OPEN — consume 30-40g protein within the next hour for maximum muscle protein synthesis.`
+        })
+      } else if (lastWorkoutHoursAgo < 24) {
+        items.push({
+          icon: <Heart size={14} className="text-pink-400" />,
+          title: 'ACTIVE RECOVERY',
+          color: 'text-pink-400',
+          text: `Last session was ${Math.round(lastWorkoutHoursAgo)}h ago (${lastWorkout.totalVolume.toLocaleString()}kg volume). ${recoveringMuscles.length} muscle group${recoveringMuscles.length !== 1 ? 's' : ''} still recovering. Focus on hydration (3L+ water) and 7-9h sleep tonight.`
+        })
+      } else if (lastWorkoutHoursAgo > 72) {
+        items.push({
+          icon: <AlertTriangle size={14} className="text-amber-400" />,
+          title: 'TRAINING GAP ALERT',
+          color: 'text-amber-400',
+          text: `It's been ${Math.round(lastWorkoutHoursAgo / 24)} days since your last workout. All muscles are fully recovered. Consider scheduling a session during your peak window (${formatHourMin(calculations.peakStart)}–${formatHourMin(calculations.peakEnd)}).`
+        })
+      }
+    }
+
+    // Recovery-based insight
+    if (recoveringMuscles.length > 0) {
+      const mostFatigued = recoveringMuscles[0] // Already sorted by percent (lowest first)
+      const hoursLeft = Math.round(mostFatigued.hoursRemaining)
+      items.push({
+        icon: <Shield size={14} className="text-purple-400" />,
+        title: 'RECOVERY PRIORITY',
+        color: 'text-purple-400',
+        text: `${mostFatigued.display.label} is your most fatigued muscle group (${mostFatigued.percent}% recovered, ~${hoursLeft}h remaining). Avoid training this group until recovery reaches 85%+.`
+      })
+    }
+
     items.push({
       icon: <Clock size={14} className="text-accent-teal" />,
       title: 'PRIME HYPERTROPHY',
       color: 'text-accent-teal',
       text: `Your protein synthesis markers peak between ${formatHourMin(calculations.peakStart)} and ${formatHourMin(calculations.peakEnd)}. Save heavy compound lifts for this window.`
     })
-    
+
     items.push({
       icon: <Info size={14} className="text-orange-400" />,
       title: 'CORTISOL WINDOW',
@@ -110,7 +223,7 @@ export default function CircadianOptimizer() {
         ? `Morning cortisol spikes early at ${formatHourMin(calculations.cortisolStart)}. Use this energy for light cardio, but avoid heavy CNS loading.`
         : `Cortisol peaks around ${formatHourMin(calculations.cortisolEnd)}. ${chronotype === 'night' ? 'Night owls benefit from delaying intense exercise.' : 'Moderate activity is okay after the spike fades.'}`
     })
-    
+
     items.push({
       icon: <Coffee size={14} className="text-amber-400" />,
       title: 'CAFFEINE CUTOFF',
@@ -118,10 +231,21 @@ export default function CircadianOptimizer() {
       text: `Stop caffeine by ${formatHourMin(calculations.recoveryStart - 4)} (6h before sleep onset at ${formatHourMin(calculations.sleep)}) for optimal CNS recovery.`
     })
 
+    // Next workout suggestion
+    items.push({
+      icon: <Target size={14} className="text-accent-teal" />,
+      title: 'NEXT SESSION',
+      color: nextWorkoutSuggestion.color,
+      text: `${nextWorkoutSuggestion.emoji} ${nextWorkoutSuggestion.label} — ${nextWorkoutSuggestion.desc}`
+    })
+
     return items
-  }, [calculations, chronotype])
+  }, [calculations, chronotype, lastWorkout, lastWorkoutHoursAgo, recoveringMuscles, nextWorkoutSuggestion])
 
   const copySchedule = () => {
+    const muscleStatus = recoveringMuscles.length > 0
+      ? `\n⚡ Recovering: ${recoveringMuscles.map(m => `${m.display.label} (${m.percent}%)`).join(', ')}`
+      : '\n✅ All muscles recovered!'
     const schedule = `🏋️ My Optimized Training Schedule
 
 ⏰ Wake: ${formatHourMin(wakeHour + shift)}
@@ -136,6 +260,9 @@ export default function CircadianOptimizer() {
 😴 Adrenal Recovery: ${formatHourMin(calculations.recoveryStart)}
 💤 Sleep: ${formatHourMin(calculations.sleep)}
 
+💪 Training Readiness: ${trainingReadiness}%
+🎯 Recommended: ${nextWorkoutSuggestion.label}${muscleStatus}
+
 Generated by Insta Coach — Body Rhythm AI`
 
     navigator.clipboard.writeText(schedule)
@@ -144,10 +271,13 @@ Generated by Insta Coach — Body Rhythm AI`
     setTimeout(() => setCopied(false), 3000)
   }
 
+  // Readiness ring color
+  const readinessColor = trainingReadiness >= 80 ? '#10b981' : trainingReadiness >= 60 ? '#f59e0b' : trainingReadiness >= 40 ? '#f97316' : '#ef4444'
+
   return (
     <>
       <Helmet><title>Body Rhythm — Insta Coach</title></Helmet>
-      
+
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-border-color/10">
@@ -207,7 +337,7 @@ Generated by Insta Coach — Body Rhythm AI`
           }
 
           return (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-gradient-to-r from-bg-card to-bg-card-hover border border-border-color rounded-2xl p-5 flex items-center gap-6 shadow-sm"
@@ -232,8 +362,33 @@ Generated by Insta Coach — Body Rhythm AI`
           )
         })()}
 
-        {/* Controls Row - More handles/compact */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Training Readiness + Controls Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Training Readiness Ring */}
+          <Card className="!p-4 flex flex-col items-center justify-center bg-bg-card/50 hover:bg-bg-card transition-colors">
+            <div className="relative w-20 h-20 mb-2">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="44" fill="none" stroke="var(--border-color)" strokeWidth="6" />
+                <motion.circle
+                  cx="50" cy="50" r="44" fill="none"
+                  stroke={readinessColor}
+                  strokeWidth="6" strokeLinecap="round"
+                  strokeDasharray={276.46}
+                  initial={{ strokeDashoffset: 276.46 }}
+                  animate={{ strokeDashoffset: 276.46 * (1 - trainingReadiness / 100) }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-black tabular-nums" style={{ color: readinessColor }}>{trainingReadiness}%</span>
+              </div>
+            </div>
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Readiness</p>
+            <p className="text-[9px] text-text-secondary mt-0.5 text-center">
+              {trainingReadiness >= 80 ? 'Fully recovered' : trainingReadiness >= 60 ? 'Partially recovered' : 'Need more rest'}
+            </p>
+          </Card>
+
           {/* Wake Time */}
           <Card className="!p-4 bg-bg-card/50 hover:bg-bg-card transition-colors">
             <div className="flex items-center justify-between mb-2">
@@ -284,7 +439,7 @@ Generated by Insta Coach — Body Rhythm AI`
                   onClick={() => setChronotype(type)}
                   className={`flex-1 py-1.5 px-1 rounded-xl text-[9px] font-black transition-all border uppercase tracking-tighter ${
                     chronotype === type
-                      ? 'bg-accent-teal text-white border-accent-teal shadow-lg shadow-accent-teal/20' 
+                      ? 'bg-accent-teal text-white border-accent-teal shadow-lg shadow-accent-teal/20'
                       : 'bg-bg-primary border-border-color text-text-secondary hover:border-accent-teal/40'
                   }`}
                   title={CHRONO_LABELS[type].desc}
@@ -308,7 +463,7 @@ Generated by Insta Coach — Body Rhythm AI`
               </div>
 
               {/* Legend */}
-              <div className="absolute top-4 right-6 flex items-center gap-4">
+              <div className="absolute top-4 right-6 flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 rounded-full bg-accent-teal" />
                   <span className="text-[9px] font-bold text-text-secondary">Peak Zone</span>
@@ -321,12 +476,18 @@ Generated by Insta Coach — Body Rhythm AI`
                   <div className="w-2 h-2 rounded-full bg-accent-purple/50" />
                   <span className="text-[9px] font-bold text-text-secondary">Sleep</span>
                 </div>
+                {lastWorkout && new Date(lastWorkout.finishedAt).toDateString() === new Date().toDateString() && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                    <span className="text-[9px] font-bold text-text-secondary">Workout</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 flex items-end justify-between gap-[2px] px-6 pb-10 relative">
                 {/* Current Time Marker */}
                 {currentIndexApprox >= 0 && currentIndexApprox <= 100 && (
-                  <div 
+                  <div
                     className="absolute bottom-0 top-0 z-20 pointer-events-none"
                     style={{ left: `calc(${currentIndexApprox}% + 24px)` }}
                   >
@@ -340,27 +501,35 @@ Generated by Insta Coach — Body Rhythm AI`
 
                 {dataPoints.map((d, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center group relative">
-                    <motion.div 
+                    <motion.div
                       initial={{ height: 0 }}
                       animate={{ height: `${d.metabolicRate}%` }}
                       transition={{ delay: i * 0.02, duration: 0.8 }}
-                      className={`w-full rounded-t-md transition-all duration-300 ${
-                        d.isPeak 
-                          ? 'bg-gradient-to-t from-accent-teal to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]' 
-                          : d.isCortisol
-                            ? 'bg-gradient-to-t from-orange-400 to-amber-500 shadow-[0_0_10px_rgba(251,146,60,0.3)]'
-                            : d.isSleep 
-                              ? 'bg-accent-purple/40 dark:bg-accent-purple/20'
-                              : 'bg-slate-300 dark:bg-bg-card-hover'
+                      className={`w-full rounded-t-md transition-all duration-300 relative ${
+                        d.wasWorkoutHour
+                          ? 'bg-gradient-to-t from-yellow-500 to-amber-400 shadow-[0_0_12px_rgba(234,179,8,0.5)]'
+                          : d.isPeak
+                            ? 'bg-gradient-to-t from-accent-teal to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                            : d.isCortisol
+                              ? 'bg-gradient-to-t from-orange-400 to-amber-500 shadow-[0_0_10px_rgba(251,146,60,0.3)]'
+                              : d.isSleep
+                                ? 'bg-accent-purple/40 dark:bg-accent-purple/20'
+                                : 'bg-slate-300 dark:bg-bg-card-hover'
                       }`}
-                    />
+                    >
+                      {d.wasWorkoutHour && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <Dumbbell size={8} className="text-yellow-400" />
+                        </div>
+                      )}
+                    </motion.div>
                     {i % 4 === 0 && (
                       <span className="absolute -bottom-7 text-[9px] font-bold text-text-secondary tabular-nums">
                         {d.hour}:00
                       </span>
                     )}
                     <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-bg-card border border-border-color p-2 rounded-lg text-[10px] font-black z-30 whitespace-nowrap shadow-lg">
-                      {d.hour}:00 — {Math.round(d.metabolicRate)}%
+                      {d.hour}:00 — {Math.round(d.metabolicRate)}%{d.wasWorkoutHour ? ' 🏋️' : ''}
                     </div>
                   </div>
                 ))}
@@ -399,6 +568,52 @@ Generated by Insta Coach — Body Rhythm AI`
               </Card>
             </div>
 
+            {/* Muscle Recovery Timeline */}
+            {recoveringMuscles.length > 0 && (
+              <Card className="!p-5">
+                <h3 className="font-black text-text-primary text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <Heart size={16} className="text-red-400" /> Muscle Recovery Timeline
+                </h3>
+                <div className="space-y-2.5">
+                  {recoveringMuscles.map((m, i) => {
+                    const statusColor = m.percent >= 85 ? 'bg-green-500' : m.percent >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                    const statusText = m.percent >= 85 ? 'Ready Soon' : m.percent >= 50 ? 'Recovering' : 'Fatigued'
+                    return (
+                      <motion.div
+                        key={m.muscle}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="flex items-center gap-3 group"
+                      >
+                        <span className="text-base w-6 text-center">{m.display.emoji}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-bold text-text-primary">{m.display.label}</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${statusColor}/20 ${statusColor.replace('bg-', 'text-')}`}>{statusText}</span>
+                              <span className="text-[10px] font-bold text-text-secondary tabular-nums">{m.percent}%</span>
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-bg-primary rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${m.percent}%` }}
+                              transition={{ duration: 0.8, delay: i * 0.05 }}
+                              className={`h-full rounded-full ${statusColor}`}
+                            />
+                          </div>
+                          {m.hoursRemaining > 0 && (
+                            <p className="text-[9px] text-text-secondary mt-0.5">~{Math.round(m.hoursRemaining)}h until full recovery</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              </Card>
+            )}
+
             {/* Meal Timing */}
             <Card className="!p-5">
               <h3 className="font-black text-text-primary text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -429,6 +644,40 @@ Generated by Insta Coach — Body Rhythm AI`
 
           {/* Insights Sidebar */}
           <div className="space-y-4">
+            {/* Quick Workout Stats */}
+            {lastWorkout && (
+              <Card className="!p-4 bg-gradient-to-br from-accent-purple/5 to-transparent border-accent-purple/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <Dumbbell size={14} className="text-accent-purple" />
+                  <span className="text-[10px] font-black text-accent-purple uppercase tracking-widest">Last Session</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                  <div className="bg-bg-primary/50 rounded-xl p-2">
+                    <p className="text-sm font-black text-text-primary tabular-nums">{lastWorkout.totalVolume.toLocaleString()}<span className="text-[8px] text-text-secondary">kg</span></p>
+                    <p className="text-[8px] text-text-secondary uppercase font-bold">Volume</p>
+                  </div>
+                  <div className="bg-bg-primary/50 rounded-xl p-2">
+                    <p className="text-sm font-black text-text-primary tabular-nums">{lastWorkout.durationMinutes}<span className="text-[8px] text-text-secondary">min</span></p>
+                    <p className="text-[8px] text-text-secondary uppercase font-bold">Duration</p>
+                  </div>
+                  <div className="bg-bg-primary/50 rounded-xl p-2">
+                    <p className="text-sm font-black text-text-primary tabular-nums">{lastWorkout.totalSets}</p>
+                    <p className="text-[8px] text-text-secondary uppercase font-bold">Sets</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {lastWorkout.musclesWorked.map(m => (
+                    <span key={m} className="px-1.5 py-0.5 bg-accent-purple/10 text-accent-purple rounded text-[8px] font-bold capitalize">{m}</span>
+                  ))}
+                </div>
+                {lastWorkoutHoursAgo != null && (
+                  <p className="text-[9px] text-text-secondary mt-2">
+                    {lastWorkoutHoursAgo < 1 ? `${Math.round(lastWorkoutHoursAgo * 60)}min ago` : `${Math.round(lastWorkoutHoursAgo)}h ago`}
+                  </p>
+                )}
+              </Card>
+            )}
+
             <Card className="h-fit">
               <h2 className="font-black text-text-primary flex items-center gap-2 mb-5">
                 <Brain className="text-accent-teal" size={18} /> AI Rhythm Insights
@@ -453,7 +702,7 @@ Generated by Insta Coach — Body Rhythm AI`
               </div>
             </Card>
 
-            {/* Recommended Protocol */}
+            {/* Protocol */}
             <Card className="!p-5">
               <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4">Today's Protocol</h3>
               <div className="space-y-2.5">
@@ -461,7 +710,7 @@ Generated by Insta Coach — Body Rhythm AI`
                   { time: formatHourMin(wakeHour + shift), label: 'Wake + Sunlight', done: currentHourDecimal > wakeHour + shift },
                   { time: formatHourMin(calculations.breakfast), label: 'Protein-rich breakfast', done: currentHourDecimal > calculations.breakfast },
                   { time: formatHourMin(calculations.preWorkout), label: 'Pre-workout nutrition', done: currentHourDecimal > calculations.preWorkout },
-                  { time: formatHourMin(calculations.peakStart), label: 'Heavy training begins', done: currentHourDecimal > calculations.peakStart },
+                  { time: formatHourMin(calculations.peakStart), label: `Heavy training begins${lastWorkout && new Date(lastWorkout.finishedAt).toDateString() === new Date().toDateString() ? ' ✅' : ''}`, done: currentHourDecimal > calculations.peakStart },
                   { time: formatHourMin(calculations.postWorkout), label: 'Post-workout recovery', done: currentHourDecimal > calculations.postWorkout },
                   { time: formatHourMin(calculations.recoveryStart), label: 'Begin wind down', done: currentHourDecimal > calculations.recoveryStart },
                   { time: formatHourMin(calculations.sleep), label: 'Lights out', done: false },

@@ -1,3 +1,11 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -72,17 +80,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               exit={{ opacity: 0, x: -10 }}
               className="flex items-center gap-2"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-lg flex items-center justify-center">
-                <Zap size={16} className="text-white" />
-              </div>
+              <img src="/logo.png" alt="Insta Coach" className="w-8 h-8 rounded-lg object-contain" />
               <span className="font-black text-lg gradient-text">Insta Coach</span>
             </motion.div>
           )}
         </AnimatePresence>
         {collapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-lg flex items-center justify-center mx-auto">
-            <Zap size={16} className="text-white" />
-          </div>
+          <img src="/logo.png" alt="Insta Coach" className="w-8 h-8 rounded-lg object-contain mx-auto" />
         )}
         <button
           onClick={onToggle}

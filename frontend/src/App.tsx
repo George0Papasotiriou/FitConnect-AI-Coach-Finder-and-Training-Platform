@@ -1,3 +1,11 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import AppShell from './components/layout/AppShell'

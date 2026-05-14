@@ -1,3 +1,21 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
+/**
+ * AbiliFit — AI-Powered Fitness & Coach Finder Platform
+ * Copyright © 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ * File: index.ts
+ * Created: 2026-05-14
+ */
+
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -54,7 +72,8 @@ const io = new Server(server, {
       if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('localhost') || origin.includes('127.0.0.1')) {
         callback(null, true);
       } else {
-        callback(null, true); // Fallback to true for production variants if not explicitly denied
+        console.warn(`⚠️ CORS blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'POST'],
@@ -72,7 +91,7 @@ app.use(cors({
     if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.includes('localhost') || origin.includes('127.0.0.1')) {
       callback(null, true);
     } else {
-      callback(null, true);
+      callback(new Error('Not allowed by CORS'));
     }
   }, 
   credentials: true 

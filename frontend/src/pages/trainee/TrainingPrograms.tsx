@@ -1,15 +1,35 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
+/**
+ * AbiliFit — AI-Powered Fitness & Coach Finder Platform
+ * Copyright © 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ * File: TrainingPrograms.tsx
+ * Created: 2026-05-14
+ */
+
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import {
   Calendar, ChevronLeft, ChevronRight, Plus, Trash2, GripVertical,
-  Sparkles, Share2, X, Search, Edit3, Dumbbell, Save, ArrowLeft
+  Sparkles, Share2, X, Search, Edit3, Dumbbell, Save, ArrowLeft,
+  CheckCircle, Clock, Flame, TrendingUp, Heart
 } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths } from 'date-fns'
 import { programsApi, ProgramExercise, ProgramDay } from '../../api/programs'
 import { aiApi } from '../../api/ai'
 import Button from '../../components/common/Button'
 import { toast } from 'sonner'
+import { useWorkoutStore, RECOVERY_HOURS } from '../../store/workoutStore'
 
 // Exercise library organized by category
 const EXERCISE_LIBRARY: Record<string, { name: string; icon: string }[]> = {
@@ -140,6 +160,16 @@ export default function TrainingPrograms() {
       }
     }).catch(() => {})
   }, [])
+
+  // Workout store integration
+  const { completedWorkouts, getWorkoutsForDate } = useWorkoutStore()
+
+  // Get completed workout dates for this month
+  const completedDates = useMemo(() => {
+    const set = new Set<string>()
+    completedWorkouts.forEach(w => set.add(w.date))
+    return set
+  }, [completedWorkouts])
 
   // Get days that have exercises
   const daysWithExercises = useMemo(() => new Set(Object.keys(programs).filter(k => programs[k].length > 0)), [programs])
@@ -335,9 +365,10 @@ export default function TrainingPrograms() {
                 <div key={`pad-${i}`} className="aspect-square" />
               ))}
 
-              {calendarDays.map((day) => {
+            {calendarDays.map((day) => {
                 const dateKey = format(day, 'yyyy-MM-dd')
                 const hasExercises = daysWithExercises.has(dateKey)
+                const hasCompleted = completedDates.has(dateKey)
                 const isSelected = selectedDate && isSameDay(day, selectedDate)
                 const today = isToday(day)
 
@@ -358,11 +389,18 @@ export default function TrainingPrograms() {
                     <span className={`font-medium ${isSelected ? 'text-white' : ''}`}>
                       {format(day, 'd')}
                     </span>
-                    {hasExercises && (
-                      <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
-                        isSelected ? 'bg-white' : 'bg-accent-purple'
-                      }`} />
-                    )}
+                    <div className="flex gap-0.5 mt-0.5">
+                      {hasExercises && (
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          isSelected ? 'bg-white' : 'bg-accent-purple'
+                        }`} />
+                      )}
+                      {hasCompleted && (
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          isSelected ? 'bg-white' : 'bg-green-400'
+                        }`} />
+                      )}
+                    </div>
                   </motion.button>
                 )
               })}
@@ -392,6 +430,44 @@ export default function TrainingPrograms() {
                     <X size={18} className="text-text-secondary" />
                   </button>
                 </div>
+
+                {/* Completed Workout Stats (if any) */}
+                {(() => {
+                  const dayWorkouts = getWorkoutsForDate(selectedDateKey!)
+                  if (dayWorkouts.length === 0) return null
+                  const totalVol = dayWorkouts.reduce((a, w) => a + w.totalVolume, 0)
+                  const totalDur = dayWorkouts.reduce((a, w) => a + w.durationMinutes, 0)
+                  const allMuscles = [...new Set(dayWorkouts.flatMap(w => w.musclesWorked))]
+                  return (
+                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="mb-4 bg-green-500/5 border border-green-500/20 rounded-xl p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle size={14} className="text-green-400" />
+                        <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">Completed Workout</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <p className="text-sm font-black text-text-primary">{totalVol.toLocaleString()}<span className="text-[9px] text-text-secondary">kg</span></p>
+                          <p className="text-[8px] text-text-secondary uppercase">Volume</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-text-primary">{totalDur}<span className="text-[9px] text-text-secondary">min</span></p>
+                          <p className="text-[8px] text-text-secondary uppercase">Duration</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-text-primary">{dayWorkouts.reduce((a, w) => a + w.totalSets, 0)}</p>
+                          <p className="text-[8px] text-text-secondary uppercase">Sets</p>
+                        </div>
+                      </div>
+                      {allMuscles.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {allMuscles.map(m => (
+                            <span key={m} className="px-1.5 py-0.5 bg-green-500/10 text-green-400 rounded text-[8px] font-bold capitalize">{m}</span>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  )
+                })()}
 
                 {/* Exercise List */}
                 <div className="flex-1 space-y-2 overflow-y-auto scrollbar-thin max-h-[50vh]">

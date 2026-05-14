@@ -1,3 +1,11 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { v4 as uuid } from 'uuid';
@@ -191,6 +199,14 @@ export async function seed() {
     { id: 'hundred-sessions', name: 'Century Club', description: 'Complete 100 workout sessions', icon: '🌟', xpReward: 2000, maxProgress: 100, category: 'sessions' },
     { id: 'perfect-week', name: 'Perfect Week', description: 'Complete all daily tasks for 7 days straight', icon: '✅', xpReward: 500, maxProgress: 7, category: 'streaks' },
     { id: 'coach-approved', name: 'Chosen One', description: 'Get accepted by a coach', icon: '🤝', xpReward: 75, maxProgress: 1, category: 'social' },
+    // Workout-based achievements (Solo Trainer)
+    { id: 'first-workout', name: 'First Workout', description: 'Complete your first solo workout session', icon: '💪', xpReward: 100, maxProgress: 1, category: 'workouts' },
+    { id: 'iron-starter', name: 'Iron Starter', description: 'Log 10 sets in the Solo Trainer', icon: '🏋️', xpReward: 50, maxProgress: 10, category: 'workouts' },
+    { id: 'volume-beast', name: 'Volume Beast', description: 'Lift a total of 10,000 kg', icon: '🦬', xpReward: 200, maxProgress: 10000, category: 'workouts' },
+    { id: 'muscle-mapper', name: 'Muscle Mapper', description: 'Train all major muscle groups', icon: '🗺️', xpReward: 150, maxProgress: 8, category: 'workouts' },
+    { id: 'recovery-master', name: 'Recovery Master', description: 'Wait for full recovery before training a muscle group', icon: '🧘', xpReward: 75, maxProgress: 1, category: 'workouts' },
+    { id: 'five-workouts-week', name: 'Gym Rat', description: 'Complete 5 solo workouts in one week', icon: '🐀', xpReward: 250, maxProgress: 5, category: 'workouts' },
+    { id: 'ai-student', name: 'AI Student', description: 'Use AI workout summary 5 times', icon: '🤖', xpReward: 100, maxProgress: 5, category: 'special' },
   ];
 
   for (const ach of achievements) {

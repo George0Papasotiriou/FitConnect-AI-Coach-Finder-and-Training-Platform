@@ -1,3 +1,21 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
+/**
+ * AbiliFit — AI-Powered Fitness & Coach Finder Platform
+ * Copyright © 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ * File: ai.ts (service)
+ * Created: 2026-05-14
+ */
+
 import OpenAI from 'openai';
 
 const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
@@ -224,4 +242,24 @@ Do not output markdown code blocks. Just the raw JSON string.`
     console.error('AI Form Analysis error:', error);
     return { score: 7.5, feedback: ["Ensure steady pacing throughout the movement.", "Keep a neutral spine, watch for hyper-extension.", "Focus on breathing during the lift."] };
   }
+}
+
+export async function getRecoveryTips(muscles: string[], hoursSinceWorkout: number): Promise<string> {
+  const context = `You are an expert sports recovery specialist. The user worked the following muscles: ${muscles.join(', ')} about ${Math.round(hoursSinceWorkout)} hours ago. Provide 3-4 concise, actionable recovery tips including specific stretches, nutrition timing, and sleep advice. Be scientific but accessible. Keep response under 200 words.`;
+  const result = await getAIResponse(`What should I do to recover my ${muscles.join(', ')}?`, context);
+  return result || 'Focus on protein intake within 30 minutes, stay hydrated (3L water), do light stretching, and aim for 8 hours of sleep. Foam rolling can help reduce soreness.';
+}
+
+export async function getWorkoutSummary(exercises: string[], totalVolume: number, duration: number, musclesWorked: string[]): Promise<string> {
+  const context = `You are an elite personal trainer providing post-workout analysis. Be motivational, specific, and actionable. Include a brief performance note, recovery timeline, and suggest what to train next. Keep under 150 words.`;
+  const prompt = `Workout summary:\n- Exercises: ${exercises.join(', ')}\n- Total volume: ${totalVolume}kg\n- Duration: ${duration} minutes\n- Muscles worked: ${musclesWorked.join(', ')}\n\nGive me a motivational post-workout analysis.`;
+  const result = await getAIResponse(prompt, context);
+  return result || `Great session! You moved ${totalVolume}kg in ${duration} minutes targeting ${musclesWorked.join(', ')}. Allow 48-72h for those muscle groups to recover. Stay hydrated and prioritize sleep tonight!`;
+}
+
+export async function getSmartNextWorkout(recoveryStatus: Record<string, number>): Promise<string> {
+  const context = `You are a smart workout planner. Based on the muscle recovery percentages, suggest the optimal workout for today. Be specific with exercises, sets, and reps. Keep under 100 words.`;
+  const muscleList = Object.entries(recoveryStatus).map(([muscle, pct]) => `${muscle}: ${pct}% recovered`).join(', ');
+  const result = await getAIResponse(`My muscle recovery: ${muscleList}. What should I train today?`, context);
+  return result || 'Based on your recovery, consider a light upper body session or active recovery with yoga and mobility work.';
 }

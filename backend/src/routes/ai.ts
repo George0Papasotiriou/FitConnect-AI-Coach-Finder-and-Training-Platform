@@ -1,6 +1,24 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
+/**
+ * AbiliFit — AI-Powered Fitness & Coach Finder Platform
+ * Copyright © 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ * File: ai.ts (routes)
+ * Created: 2026-05-14
+ */
+
 import { Router } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import { processVoiceCommand, getMotivationalQuote, getWorkoutSuggestion, getDietaryTip, getFormTip, getAIResponse, getAIChatResponse } from '../services/ai.js';
+import { processVoiceCommand, getMotivationalQuote, getWorkoutSuggestion, getDietaryTip, getFormTip, getAIResponse, getAIChatResponse, getRecoveryTips, getWorkoutSummary, getSmartNextWorkout } from '../services/ai.js';
 import db from '../db.js';
 
 const router = Router();
@@ -283,6 +301,45 @@ router.post('/chat', authenticate, async (req: AuthRequest, res) => {
     res.json({ response });
   } catch (err) {
     console.error('AI chat route error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// AI Recovery Tips
+router.post('/recovery-tips', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { muscles, hoursSinceWorkout } = req.body;
+    if (!muscles || !Array.isArray(muscles)) return res.status(400).json({ message: 'Muscles array required' });
+    const tips = await getRecoveryTips(muscles, hoursSinceWorkout || 24);
+    res.json({ tips });
+  } catch (err) {
+    console.error('AI recovery tips error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// AI Workout Summary
+router.post('/workout-summary', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { exercises, totalVolume, duration, musclesWorked } = req.body;
+    if (!exercises || !Array.isArray(exercises)) return res.status(400).json({ message: 'Exercises array required' });
+    const summary = await getWorkoutSummary(exercises, totalVolume || 0, duration || 0, musclesWorked || []);
+    res.json({ summary });
+  } catch (err) {
+    console.error('AI workout summary error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// AI Smart Next Workout
+router.post('/smart-next-workout', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { recoveryStatus } = req.body;
+    if (!recoveryStatus) return res.status(400).json({ message: 'Recovery status required' });
+    const suggestion = await getSmartNextWorkout(recoveryStatus);
+    res.json({ suggestion });
+  } catch (err) {
+    console.error('AI smart workout error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -1,3 +1,21 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
+/**
+ * AbiliFit — AI-Powered Fitness & Coach Finder Platform
+ * Copyright © 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ * File: VirtualGym.tsx
+ * Created: 2026-05-14
+ */
+
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
@@ -8,13 +26,16 @@ import {
   Music, Volume2, SkipForward, SkipBack,
   X, Scale, Car, BusFront, Bird,
   Volume1, CheckCircle, Flame,
-  RotateCcw, Info, Bookmark
+  RotateCcw, Info, Bookmark, StopCircle, Sparkles, TrendingUp
 } from 'lucide-react'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import { toast } from 'sonner'
 import { EXERCISES, Exercise, MUSCLE_MAP, BODY_PART_FILTERS } from '../../data/exercises'
 import { AnatomyFront, AnatomyBack, MuscleGroup } from '../../components/ai/AnatomyModel'
+import { useWorkoutStore, CATEGORY_TO_MUSCLES, type WorkoutExerciseLog } from '../../store/workoutStore'
+import { aiApi } from '../../api/ai'
+import { format } from 'date-fns'
 
 // ── Types ──
 type HubView = 'HUB' | 'BESTIARY' | 'EXERCISE_DETAIL'
@@ -156,6 +177,15 @@ export default function SoloTrainingHub() {
   // Favorites
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
 
+  // Workout store integration
+  const workoutStore = useWorkoutStore()
+  const [sessionActive, setSessionActive] = useState(false)
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null)
+  const [showSummary, setShowSummary] = useState(false)
+  const [aiSummary, setAiSummary] = useState('')
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [lastFinishedWorkout, setLastFinishedWorkout] = useState<any>(null)
+
   // ── Computed ──
   const totalVolume = useMemo(() =>
     sessionLogs.reduce((acc, log) =>
@@ -241,6 +271,12 @@ export default function SoloTrainingHub() {
   // ── Log Set ──
   const logSet = () => {
     if (reps <= 0 || weight <= 0) return
+    // Auto-start session on first set
+    if (!sessionActive) {
+      setSessionActive(true)
+      setSessionStartTime(new Date())
+      workoutStore.startSession()
+    }
     const newSet: WorkoutSet = { reps, weight, timestamp: new Date() }
     setSessionLogs(prev => {
       const ex = prev.find(l => l.exerciseId === selectedExercise.id)
@@ -250,6 +286,94 @@ export default function SoloTrainingHub() {
     setHypeLevel(p => Math.min(100, p + 18))
     toast.success(`💪 ${reps} × ${weight}kg logged`, { duration: 2000 })
   }
+
+  // ── Finish Workout ──
+  const finishWorkout = useCallback(async () => {
+    if (sessionLogs.length === 0) { toast.error('No sets logged yet!'); return }
+    const now = new Date()
+    const startTime = sessionStartTime || now
+    const durationMinutes = Math.max(1, Math.round((now.getTime() - startTime.getTime()) / 60000))
+
+    // Build exercise logs with muscle groups (PRIMARY + SECONDARY)
+    const exercises: WorkoutExerciseLog[] = sessionLogs.map(log => {
+      const ex = EXERCISES.find(e => e.id === log.exerciseId)!
+      const muscles: string[] = []
+      const primaryMapped: string[] = []
+      const secondaryMapped: string[] = []
+
+      // Map primary muscles
+      for (const p of ex.muscleGroups.primary) {
+        const mapped = MUSCLE_MAP[p.toLowerCase()]
+        if (mapped && !muscles.includes(mapped)) {
+          muscles.push(mapped)
+          primaryMapped.push(mapped)
+        }
+      }
+      // Map secondary muscles — CRITICAL: bench press should trigger triceps, deltoids, etc.
+      for (const s of ex.muscleGroups.secondary) {
+        const mapped = MUSCLE_MAP[s.toLowerCase()]
+        if (mapped && !muscles.includes(mapped)) {
+          muscles.push(mapped)
+          secondaryMapped.push(mapped)
+        }
+      }
+      // Fallback: also add category-based muscles
+      const catMuscles = CATEGORY_TO_MUSCLES[ex.category] || []
+      for (const m of catMuscles) { if (!muscles.includes(m)) muscles.push(m) }
+
+      return {
+        exerciseId: ex.id,
+        exerciseName: ex.name,
+        category: ex.category || ex.bodyPart,
+        muscleGroups: muscles,
+        primaryMuscles: primaryMapped,
+        secondaryMuscles: secondaryMapped,
+        sets: log.sets.map(s => ({ reps: s.reps, weight: s.weight, timestamp: s.timestamp.toISOString() })),
+      }
+    })
+
+    const allMuscles = [...new Set(exercises.flatMap(e => e.muscleGroups))]
+    const totalVol = sessionLogs.reduce((a, l) => a + l.sets.reduce((s, set) => s + set.reps * set.weight, 0), 0)
+    const totalSetsCount = sessionLogs.reduce((a, l) => a + l.sets.length, 0)
+
+    const workout = workoutStore.finishWorkout({
+      date: format(now, 'yyyy-MM-dd'),
+      startedAt: startTime.toISOString(),
+      finishedAt: now.toISOString(),
+      exercises,
+      totalVolume: totalVol,
+      totalSets: totalSetsCount,
+      musclesWorked: allMuscles,
+      durationMinutes,
+    })
+
+    setLastFinishedWorkout(workout)
+    setShowSummary(true)
+    toast.success('🎉 Workout saved!', { duration: 3000 })
+
+    // Reset session
+    setSessionLogs([])
+    setSessionActive(false)
+    setSessionStartTime(null)
+
+    // Get AI summary
+    setSummaryLoading(true)
+    try {
+      const summary = await aiApi.chat(
+        `I just finished a workout. Here are the details:
+- Duration: ${durationMinutes} minutes
+- Exercises: ${exercises.map(e => `${e.exerciseName} (${e.sets.length} sets)`).join(', ')}
+- Total volume: ${totalVol.toLocaleString()} kg
+- Muscles worked: ${allMuscles.join(', ')}
+
+Please give me a brief, motivational post-workout analysis with recovery tips and suggestions for my next session.`,
+        []
+      )
+      setAiSummary(summary.response)
+      // Update workout with AI summary
+    } catch { setAiSummary('Great workout! Remember to hydrate, stretch, and get adequate sleep for optimal recovery. 💪') }
+    setSummaryLoading(false)
+  }, [sessionLogs, sessionStartTime, workoutStore])
 
   const openDetail = (ex: Exercise) => { setDetailExercise(ex); setView('EXERCISE_DETAIL') }
   const equipExercise = (ex: Exercise) => { setSelectedExercise(ex); setView('HUB'); toast.info(`Loaded: ${ex.name}`, { duration: 1500 }) }
@@ -335,12 +459,21 @@ export default function SoloTrainingHub() {
                       <p className="text-[11px] text-text-secondary mt-0.5">{selectedExercise.bodyPart} · {selectedExercise.equipment}</p>
                     </button>
 
-                    {/* Rep Counter */}
+                    {/* Rep Counter — editable input */}
                     <div className="text-center py-3">
-                      <motion.div key={reps} initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                        className="text-6xl font-black text-text-primary tabular-nums leading-none"
-                      >{reps}</motion.div>
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => setReps(r => Math.max(1, r - 1))}
+                          className="w-8 h-8 rounded-lg bg-bg-card-hover flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"><Minus size={14} /></button>
+                        <input
+                          type="number"
+                          value={reps}
+                          onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v >= 1) setReps(v) }}
+                          min={1}
+                          className="w-24 text-center text-5xl font-black text-text-primary tabular-nums leading-none bg-transparent outline-none border-b-2 border-border-color focus:border-accent-purple transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <button onClick={() => setReps(r => r + 1)}
+                          className="w-8 h-8 rounded-lg bg-bg-card-hover flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"><Plus size={14} /></button>
+                      </div>
                       <p className="text-[9px] font-bold text-text-secondary uppercase tracking-[0.3em] mt-1.5">Reps</p>
                     </div>
 
@@ -350,18 +483,18 @@ export default function SoloTrainingHub() {
                         className="w-9 h-9 rounded-lg bg-bg-card-hover flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"><Minus size={14} /></button>
                       <div className="flex-1 bg-bg-card-hover rounded-lg px-3 py-2 flex items-center justify-center gap-1 border border-border-color">
                         <input type="number" value={weight} onChange={e => setWeight(Math.max(0, parseInt(e.target.value) || 0))}
-                          className="w-14 bg-transparent text-center text-lg font-extrabold text-text-primary outline-none tabular-nums" />
+                          className="w-14 bg-transparent text-center text-lg font-extrabold text-text-primary outline-none tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                         <span className="text-[10px] font-bold text-text-secondary">kg</span>
                       </div>
                       <button onClick={() => setWeight(w => w + 5)}
                         className="w-9 h-9 rounded-lg bg-bg-card-hover flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"><Plus size={14} /></button>
                     </div>
 
-                    {/* Quick rep buttons */}
+                    {/* Quick rep presets */}
                     <div className="flex gap-1.5">
-                      {[6, 8, 10, 12, 15].map(r => (
+                      {[1, 3, 5, 6, 8, 10, 12, 15, 20].map(r => (
                         <button key={r} onClick={() => setReps(r)}
-                          className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${reps === r
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${reps === r
                             ? 'bg-accent-purple text-white shadow' : 'bg-bg-card-hover text-text-secondary hover:text-text-primary'}`}
                         >{r}</button>
                       ))}
@@ -370,6 +503,12 @@ export default function SoloTrainingHub() {
                     <Button size="md" fullWidth onClick={logSet} leftIcon={<Zap size={16} />} className="!rounded-xl">
                       Log Set · {reps} × {weight}kg
                     </Button>
+
+                    {sessionActive && (
+                      <Button size="md" fullWidth onClick={finishWorkout} variant="secondary" className="!rounded-xl !mt-3 !border-green-500/30 !text-green-400 hover:!bg-green-500/10">
+                        <StopCircle size={16} className="mr-2" /> Finish Workout
+                      </Button>
+                    )}
                   </Card>
 
                   {/* Timer */}
@@ -726,6 +865,84 @@ export default function SoloTrainingHub() {
             </motion.div>
           )}
 
+        </AnimatePresence>
+
+        {/* Post-Workout Summary Modal */}
+        <AnimatePresence>
+          {showSummary && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setShowSummary(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-bg-card border border-border-color rounded-3xl w-full max-w-lg overflow-hidden"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="bg-gradient-to-br from-green-500/20 to-accent-teal/10 p-6 border-b border-border-color">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-green-500/20 flex items-center justify-center">
+                      <Trophy size={24} className="text-green-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-extrabold text-text-primary">Workout Complete!</h2>
+                      <p className="text-xs text-text-secondary">Great session, keep pushing! 🔥</p>
+                    </div>
+                  </div>
+
+                  {lastFinishedWorkout && (
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-bg-primary/60 rounded-xl p-3 text-center border border-border-color">
+                        <p className="text-lg font-black text-text-primary">{lastFinishedWorkout.totalSets}</p>
+                        <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wider">Sets</p>
+                      </div>
+                      <div className="bg-bg-primary/60 rounded-xl p-3 text-center border border-border-color">
+                        <p className="text-lg font-black text-text-primary">{lastFinishedWorkout.totalVolume.toLocaleString()}<span className="text-[10px] text-text-secondary">kg</span></p>
+                        <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wider">Volume</p>
+                      </div>
+                      <div className="bg-bg-primary/60 rounded-xl p-3 text-center border border-border-color">
+                        <p className="text-lg font-black text-text-primary">{lastFinishedWorkout.durationMinutes}<span className="text-[10px] text-text-secondary">min</span></p>
+                        <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wider">Duration</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles size={14} className="text-accent-purple" />
+                    <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">AI Coach Insights</h3>
+                  </div>
+                  {summaryLoading ? (
+                    <div className="flex items-center gap-3 py-8">
+                      <div className="w-5 h-5 border-2 border-accent-purple/30 border-t-accent-purple rounded-full animate-spin" />
+                      <span className="text-sm text-text-secondary">Analyzing your workout...</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap bg-bg-primary rounded-xl p-4 border border-border-color max-h-48 overflow-y-auto">
+                      {aiSummary}
+                    </div>
+                  )}
+
+                  {lastFinishedWorkout && lastFinishedWorkout.musclesWorked.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2">Muscles Trained</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {lastFinishedWorkout.musclesWorked.map((m: string) => (
+                          <span key={m} className="px-2 py-1 bg-accent-purple/10 text-accent-purple rounded-lg text-[10px] font-bold capitalize">{m}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <Button size="md" fullWidth onClick={() => setShowSummary(false)} className="!rounded-xl !mt-5">
+                    Done
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </>

@@ -1,8 +1,17 @@
-import React, { useState, useMemo } from 'react'
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Dumbbell, Trophy, Target, Flame, Search, Plus, Trash2, Info, Zap, Users } from 'lucide-react'
+import { X, Dumbbell, Trophy, Target, Flame, Search, Plus, Trash2, Info, Zap, Users, Download, RotateCcw } from 'lucide-react'
 import Button from '../common/Button'
 import { AnatomyFront, AnatomyBack } from './AnatomyModel'
+import { useWorkoutStore } from '../../store/workoutStore'
 
 interface StrengthCalculatorProps {
   isOpen: boolean
@@ -110,6 +119,81 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
   const [hoveredMuscle, setHoveredMuscle] = useState<MuscleGroup | null>(null)
   const [showLibrary, setShowLibrary] = useState(false)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [hasImportedLastWorkout, setHasImportedLastWorkout] = useState(false)
+
+  const { completedWorkouts } = useWorkoutStore()
+
+  // Map Solo Trainer exercise names to Strength Vault library entries
+  const EXERCISE_NAME_MAP: Record<string, string> = useMemo(() => ({
+    'bench press': 'bench',
+    'incline bench press': 'incline-bench',
+    'dumbbell bench press': 'bench',
+    'overhead press': 'ohp',
+    'lateral raise': 'lat-raise',
+    'face pull': 'facepull',
+    'barbell curl': 'bb-curl',
+    'hammer curl': 'hammer-curl',
+    'incline dumbbell curl': 'bb-curl',
+    'triceps pushdown': 'skulcrusher',
+    'skull crusher': 'skulcrusher',
+    'lat pulldown': 'lat-pulldown',
+    'bent over row': 'barbell-row',
+    'one arm dumbbell row': 'barbell-row',
+    'seated cable row': 'barbell-row',
+    'conventional deadlift': 'deadlift',
+    'barbell back squat': 'squat',
+    'leg extension': 'leg-press',
+    'seated leg curl': 'rdl',
+    'romanian deadlift': 'rdl',
+    'barbell hip thrust': 'rdl',
+    'standing calf raise': 'calf-raise',
+    'dumbbell lunge': 'lunges',
+    'cable crunch': 'v-up',
+    'plank': 'plank',
+    'push-up': 'pushup',
+    'lever seated fly': 'bench',
+    'cable standing fly': 'bench',
+  }), [])
+
+  // Auto-import last workout when opening (once per open)
+  const importLastWorkout = useCallback(() => {
+    if (completedWorkouts.length === 0) return
+    const lastWorkout = completedWorkouts[0]
+    const imported: PresetExercise[] = []
+
+    for (const exLog of lastWorkout.exercises) {
+      const matchKey = exLog.exerciseName.toLowerCase()
+      const libraryId = EXERCISE_NAME_MAP[matchKey]
+      const libEntry = libraryId ? EXERCISE_LIBRARY.find(e => e.id === libraryId) : null
+
+      if (libEntry && !imported.find(i => i.id === libEntry.id)) {
+        // Use the heaviest set from the workout
+        const heaviestSet = exLog.sets.reduce((best, s) => s.weight > best.weight ? s : best, exLog.sets[0])
+        imported.push({
+          id: libEntry.id,
+          name: libEntry.name,
+          weight: heaviestSet.weight,
+          reps: heaviestSet.reps,
+          primary: libEntry.primary,
+          secondary: libEntry.secondary,
+          isBodyweight: libEntry.isBodyweight,
+          bwMultiplier: libEntry.bwMultiplier,
+        })
+      }
+    }
+
+    if (imported.length > 0) {
+      setUserExercises(imported)
+      setHasImportedLastWorkout(true)
+    }
+  }, [completedWorkouts, EXERCISE_NAME_MAP])
+
+  // Auto-import on first open if there's a recent workout
+  useEffect(() => {
+    if (isOpen && !hasImportedLastWorkout && completedWorkouts.length > 0) {
+      importLastWorkout()
+    }
+  }, [isOpen, hasImportedLastWorkout, completedWorkouts.length, importLastWorkout])
 
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY })
@@ -407,8 +491,19 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
                  <div className="bg-bg-card rounded-2xl border border-border-color p-4 mb-4 shadow-inner">
                     <label className="text-[10px] font-black text-accent-purple uppercase tracking-widest mb-1 block">Body Weight (kg)</label>
                     <input type="number" value={bodyWeight} onChange={e => setBodyWeight(Number(e.target.value))}
-                      className="w-full bg-transparent text-2xl font-black outline-none text-text-primary" />
+                      className="w-full bg-transparent text-2xl font-black outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                  </div>
+
+                 {/* Import from last workout button */}
+                 {completedWorkouts.length > 0 && (
+                   <button
+                     onClick={importLastWorkout}
+                     className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-teal/10 border border-accent-teal/20 rounded-2xl text-accent-teal hover:bg-accent-teal/20 transition-all group"
+                   >
+                     <Download size={14} className="group-hover:animate-bounce" />
+                     <span className="text-[11px] font-bold uppercase tracking-wider">Import Last Solo Workout</span>
+                   </button>
+                 )}
 
                  <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />

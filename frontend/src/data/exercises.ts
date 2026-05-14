@@ -1,3 +1,11 @@
+/**
+ * AbiliFit - AI-Powered Fitness & Coach Finder Platform
+ * Copyright (c) 2026 George Papasotiriou. All rights reserved.
+ *
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 export interface Exercise {
   id: string;
   name: string;
@@ -27,6 +35,8 @@ export const MUSCLE_MAP: Record<string, string> = {
   'upper back': 'upperBack',
   'lats': 'upperBack',
   'rhomboids': 'upperBack',
+  'traps': 'upperBack',
+  'trapezius': 'upperBack',
   'lower back': 'lowerBack',
   'erector spinae': 'lowerBack',
   'shoulders': 'deltoids',
@@ -34,17 +44,29 @@ export const MUSCLE_MAP: Record<string, string> = {
   'front delts': 'deltoids',
   'rear delts': 'deltoids',
   'side delts': 'deltoids',
+  'anterior deltoid': 'deltoids',
+  'posterior deltoid': 'deltoids',
+  'lateral deltoid': 'deltoids',
   'biceps': 'biceps',
+  'biceps brachii': 'biceps',
   'triceps': 'triceps',
+  'triceps brachii': 'triceps',
   'forearms': 'forearms',
+  'brachioradialis': 'forearms',
+  'wrist flexors': 'forearms',
   'quads': 'quads',
   'quadriceps': 'quads',
   'hamstrings': 'hamstrings',
   'glutes': 'glutes',
+  'gluteus maximus': 'glutes',
   'calves': 'calves',
+  'gastrocnemius': 'calves',
+  'soleus': 'calves',
   'core': 'core',
   'abs': 'core',
+  'abdominals': 'core',
   'obliques': 'core',
+  'rectus abdominis': 'core',
 };
 
 export const BODY_PART_FILTERS = [
