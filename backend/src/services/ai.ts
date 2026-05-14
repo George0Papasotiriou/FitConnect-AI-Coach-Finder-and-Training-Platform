@@ -3,7 +3,14 @@ import OpenAI from 'openai';
 const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 const FALLBACK_MODELS = ['openai/gpt-4o-mini', 'anthropic/claude-3-haiku', 'mistralai/mistral-7b-instruct'];
 
-function makeClient(apiKey: string) {
+/** Returns a redacted key prefix safe for logging, e.g. "sk-or-v1-****" */
+function maskKey(key: string): string {
+  if (!key) return '(not set)';
+  const prefix = key.slice(0, 12);
+  return `${prefix}****`;
+}
+
+function makeClient(apiKey: string): OpenAI {
   return new OpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey,
@@ -14,14 +21,64 @@ function makeClient(apiKey: string) {
   });
 }
 
-const primaryClient = makeClient(process.env.OPENROUTER_API_KEY || '');
-const fallbackClient = makeClient(process.env.OPENROUTER_API_KEY_FALLBACK || process.env.OPENROUTER_API_KEY || '');
+// Validate keys at startup — warn loudly but don't crash so the rest of the
+// app remains functional even when AI features are unavailable.
+const PRIMARY_KEY = process.env.OPENROUTER_API_KEY || '';
+const FALLBACK_KEY = process.env.OPENROUTER_API_KEY_FALLBACK || '';
+
+if (!PRIMARY_KEY) {
+  console.warn('[AI] WARNING: OPENROUTER_API_KEY is not set. AI features will be unavailable.');
+} else {
+  console.log(`[AI] Primary key loaded: ${maskKey(PRIMARY_KEY)}`);
+}
+
+if (!FALLBACK_KEY) {
+  console.warn('[AI] WARNING: OPENROUTER_API_KEY_FALLBACK is not set. No fallback key available.');
+} else {
+  console.log(`[AI] Fallback key loaded: ${maskKey(FALLBACK_KEY)}`);
+}
+
+// Only create clients for keys that are actually present.
+const primaryClient = PRIMARY_KEY ? makeClient(PRIMARY_KEY) : null;
+// Use a distinct fallback client only when a separate fallback key is provided.
+const fallbackClient = FALLBACK_KEY ? makeClient(FALLBACK_KEY) : primaryClient;
+
+/** Returns true when the error indicates an authentication/authorisation failure. */
+function isAuthError(err: any): boolean {
+  const msg: string = err?.message || '';
+  const status: number = err?.status ?? err?.response?.status ?? 0;
+  return (
+    status === 401 ||
+    status === 403 ||
+    msg.includes('invalid_api_key') ||
+    msg.includes('Unauthorized') ||
+    msg.includes('No auth credentials')
+  );
+}
+
+/** Returns true when the error is transient and retrying with another model may help. */
+function isRetryableError(err: any): boolean {
+  const status: number = err?.status ?? err?.response?.status ?? 0;
+  return status === 429 || status === 503 || status === 502;
+}
 
 async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Promise<string> {
-  const models = [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)];
-  const clients = [primaryClient, fallbackClient];
+  if (!primaryClient && !fallbackClient) {
+    console.error('[AI] No API clients available — both primary and fallback keys are missing.');
+    return '';
+  }
 
-  for (const client of clients) {
+  const models = [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)];
+
+  // Build a deduplicated list of [client, keyLabel] pairs so we don't retry
+  // the same key twice when no separate fallback key was configured.
+  const clientPairs: Array<[OpenAI, string]> = [];
+  if (primaryClient) clientPairs.push([primaryClient, `primary (${maskKey(PRIMARY_KEY)})`]);
+  if (fallbackClient && fallbackClient !== primaryClient) {
+    clientPairs.push([fallbackClient, `fallback (${maskKey(FALLBACK_KEY)})`]);
+  }
+
+  for (const [client, keyLabel] of clientPairs) {
     for (const model of models) {
       try {
         const completion = await client.chat.completions.create({
@@ -33,9 +90,17 @@ async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Prom
         const content = completion.choices[0]?.message?.content;
         if (content) return content;
       } catch (err: any) {
-        const msg = err?.message || '';
-        const isFatal = msg.includes('invalid_api_key') || msg.includes('Unauthorized');
-        if (isFatal) break;
+        if (isAuthError(err)) {
+          console.error(`[AI] Auth error with key ${keyLabel} on model "${model}". Skipping to next key.`);
+          // Auth failure is key-level — no point trying other models with this key.
+          break;
+        }
+        if (isRetryableError(err)) {
+          console.warn(`[AI] Transient error (${err?.status ?? 'unknown'}) with model "${model}" using key ${keyLabel}. Trying next model.`);
+          continue;
+        }
+        // Unknown error — log and try the next model.
+        console.warn(`[AI] Unexpected error with model "${model}" using key ${keyLabel}: ${err?.message ?? err}`);
         continue;
       }
     }
@@ -171,17 +236,13 @@ export async function getFormTip(exercise: string): Promise<string> {
 }
 export async function analyzeFormImages(imagesBase64: string[], exercise: string): Promise<{score: number, feedback: string[]}> {
   try {
-    const clients = [primaryClient, fallbackClient];
-    // Utilizing free models explicitly for vision!
-    const models = ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.2-90b-vision-instruct:free'];
+    // Utilizing free vision-capable models explicitly.
+    const visionModels = ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.2-90b-vision-instruct:free'];
 
     const contentObj: any[] = [
       {
         type: 'text',
-        text: `You are an elite biomechanics critic and personal trainer. Analyze the form of a user executing a ${exercise} over a series of sequential frames from start to finish. Provide exactly a 1-10 numerical score (can be decimal) and an array of 3 highly critical and actionable feedback points.
-Output STRICTLY and ONLY valid JSON matching this schema:
-{"score": 8.5, "feedback": ["Use deeper depth", "Keep back straight", "Drive through heels"]}
-Do not output markdown code blocks. Just the raw JSON string.`
+        text: `You are an elite biomechanics critic and personal trainer. Analyze the form of a user executing a ${exercise} over a series of sequential frames from start to finish. Provide exactly a 1-10 numerical score (can be decimal) and an array of 3 highly critical and actionable feedback points.\nOutput STRICTLY and ONLY valid JSON matching this schema:\n{\"score\": 8.5, \"feedback\": [\"Use deeper depth\", \"Keep back straight\", \"Drive through heels\"]}\nDo not output markdown code blocks. Just the raw JSON string.`
       }
     ];
 
@@ -194,8 +255,19 @@ Do not output markdown code blocks. Just the raw JSON string.`
 
     const messages = [{ role: 'user', content: contentObj }];
 
-    for (const client of clients) {
-      for (const model of models) {
+    // Build deduplicated client pairs (same deduplication logic as callAI).
+    const clientPairs: Array<[OpenAI, string]> = [];
+    if (primaryClient) clientPairs.push([primaryClient, `primary (${maskKey(PRIMARY_KEY)})`]);
+    if (fallbackClient && fallbackClient !== primaryClient) {
+      clientPairs.push([fallbackClient, `fallback (${maskKey(FALLBACK_KEY)})`]);
+    }
+
+    if (clientPairs.length === 0) {
+      throw new Error('No API clients available — both primary and fallback keys are missing.');
+    }
+
+    for (const [client, keyLabel] of clientPairs) {
+      for (const model of visionModels) {
         try {
           const completion = await client.chat.completions.create({
             model,
@@ -204,24 +276,26 @@ Do not output markdown code blocks. Just the raw JSON string.`
             temperature: 0.2,
           });
           const content = completion.choices[0]?.message?.content || "";
-          
+
           let cleaned = content.trim();
           if (cleaned.startsWith('```')) {
             cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
           }
-          
+
           return JSON.parse(cleaned);
         } catch (e: any) {
-          const msg = e?.message || '';
-          if (msg.includes('invalid_api_key') || msg.includes('Unauthorized')) break;
-          // Silently continue to fallback model
+          if (isAuthError(e)) {
+            console.error(`[AI] Auth error with key ${keyLabel} on vision model "${model}". Skipping to next key.`);
+            break;
+          }
+          console.warn(`[AI] Vision model "${model}" failed with key ${keyLabel}: ${e?.message ?? e}`);
           continue;
         }
       }
     }
-    throw new Error("All vision models failed");
+    throw new Error('All vision models failed');
   } catch (error) {
-    console.error('AI Form Analysis error:', error);
+    console.error('[AI] Form analysis error:', error);
     return { score: 7.5, feedback: ["Ensure steady pacing throughout the movement.", "Keep a neutral spine, watch for hyper-extension.", "Focus on breathing during the lift."] };
   }
 }
