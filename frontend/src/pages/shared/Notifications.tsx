@@ -41,7 +41,7 @@ export default function Notifications() {
 
   return (
     <>
-      <Helmet><title>Notifications — Insta Coach</title></Helmet>
+      <Helmet><title>Notifications — AbiliFit</title></Helmet>
       <div className="max-w-2xl mx-auto space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
           <h1 className="text-2xl font-black text-text-primary">Notifications</h1>

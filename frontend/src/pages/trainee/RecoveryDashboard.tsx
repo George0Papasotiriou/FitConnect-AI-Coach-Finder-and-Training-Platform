@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import { Heart, Zap, Clock, Activity, AlertCircle, Dumbbell, ChevronRight, Sparkles, Moon, Droplets, Apple, Brain } from 'lucide-react'
 import Card from '../../components/common/Card'
+import Modal from '../../components/common/Modal'
 import { useStrengthStore } from '../../store/strengthStore'
 import { useWorkoutStore, RECOVERY_HOURS } from '../../store/workoutStore'
 import { AnatomyFront, AnatomyBack } from '../../components/ai/AnatomyModel'
@@ -57,6 +58,44 @@ const RECOVERY_TIPS_MAP: Record<string, string[]> = {
   core: ['Gentle yoga flow', 'Dead hang from bar', 'Diaphragmatic breathing']
 }
 
+function formatContent(text: string) {
+  const lines = text.split('\n')
+  return lines.map((line, i) => {
+    if (line.startsWith('### ')) {
+      return <h3 key={i} className="text-lg font-bold text-accent-teal mt-4 mb-2">{line.slice(4).replace(/\*\*/g, '')}</h3>
+    }
+    if (line.startsWith('#### ')) {
+      return <h4 key={i} className="text-base font-bold text-text-primary mt-3 mb-1">{line.slice(5).replace(/\*\*/g, '')}</h4>
+    }
+    if (line.startsWith('**') && line.endsWith('**')) {
+      return <p key={i} className="font-bold mt-2 first:mt-0">{line.replace(/\*\*/g, '')}</p>
+    }
+    if (line.match(/^\*\*(.+?)\*\*/)) {
+      const formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-text-primary">$1</strong>')
+      return <p key={i} dangerouslySetInnerHTML={{ __html: formatted }} className="mb-1" />
+    }
+    if (line.startsWith('- ') || line.startsWith('• ') || line.startsWith('* ')) {
+      return (
+        <div key={i} className="flex items-start text-sm mb-1">
+          <span className="mr-2 opacity-60">•</span>
+          <span dangerouslySetInnerHTML={{ __html: line.replace(/^[-•*]\s/, '').replace(/\*\*(.+?)\*\*/g, '<strong class="text-text-primary">$1</strong>') }} />
+        </div>
+      )
+    }
+    if (line.match(/^\d+\.\s/)) {
+      const num = line.match(/^(\d+)\.\s/)?.[1]
+      return (
+        <div key={i} className="flex items-start text-sm mb-1">
+          <span className="mr-2 opacity-60 font-medium">{num}.</span>
+          <span dangerouslySetInnerHTML={{ __html: line.replace(/^\d+\.\s/, '').replace(/\*\*(.+?)\*\*/g, '<strong class="text-text-primary">$1</strong>') }} />
+        </div>
+      )
+    }
+    if (line.trim() === '') return <br key={i} />
+    return <p key={i} className="mb-1 text-sm leading-relaxed">{line}</p>
+  })
+}
+
 export default function RecoveryDashboard() {
   const { getRecoveryProgress, fatigue } = useStrengthStore()
   const { getMuscleRecoveryStatus, completedWorkouts, getLastWorkoutForMuscle } = useWorkoutStore()
@@ -64,6 +103,10 @@ export default function RecoveryDashboard() {
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null)
   const [aiRecoveryTip, setAiRecoveryTip] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState('AI Recovery Protocol')
+  const [modalContent, setModalContent] = useState('')
+  const [stretchLoading, setStretchLoading] = useState<string | null>(null)
 
   const muscleStats = useMemo(() => {
     const groups: MuscleGroup[] = ['chest', 'upperBack', 'lowerBack', 'deltoids', 'biceps', 'triceps', 'forearms', 'quads', 'hamstrings', 'glutes', 'calves', 'core']
@@ -114,6 +157,30 @@ export default function RecoveryDashboard() {
     if (selectedMuscle) fetchAiTip(selectedMuscle)
   }, [selectedMuscle, fetchAiTip])
 
+  const handleOpenProtocolModal = () => {
+    setModalTitle('AI Recovery Protocol')
+    setModalContent(aiRecoveryTip)
+    setShowAiModal(true)
+  }
+
+  const handleStretchClick = async (stretch: string) => {
+    setStretchLoading(stretch)
+    try {
+      const result = await aiApi.chat(
+        `Explain how to perform the following stretch safely and effectively: ${stretch}. Provide step-by-step instructions. Keep it concise.`,
+        []
+      )
+      setModalTitle(`Stretch Guide: ${stretch}`)
+      setModalContent(result.response)
+      setShowAiModal(true)
+    } catch {
+      setModalTitle(`Stretch Guide: ${stretch}`)
+      setModalContent('Hold the stretch for 30 seconds and focus on deep breathing. Ensure you feel a gentle pull, not pain.')
+      setShowAiModal(true)
+    }
+    setStretchLoading(null)
+  }
+
   const getRecoveryColor = (m: MuscleGroup): string => {
     const stat = muscleStats.find(s => s.id === m)
     const progress = stat?.progress ?? 100
@@ -141,9 +208,9 @@ export default function RecoveryDashboard() {
 
   return (
     <>
-      <Helmet><title>Recovery Dashboard — Insta Coach</title></Helmet>
+      <Helmet><title>Recovery Dashboard — AbiliFit</title></Helmet>
       
-      <div className="max-w-6xl mx-auto space-y-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto space-y-8">
         <header>
           <h1 className="text-3xl font-black text-text-primary flex items-center gap-3">
              <Heart className="text-red-400" /> Recovery Dashboard
@@ -271,18 +338,24 @@ export default function RecoveryDashboard() {
 
                           {/* AI Recovery Tips */}
                           <div>
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-3">
                               <Sparkles size={12} className="text-accent-purple" />
                               <p className="text-xs font-bold text-text-secondary uppercase">AI Recovery Advice</p>
                             </div>
-                            {aiLoading ? (
-                              <div className="flex items-center gap-2 py-4">
-                                <div className="w-4 h-4 border-2 border-accent-purple/30 border-t-accent-purple rounded-full animate-spin" />
-                                <span className="text-[11px] text-text-secondary">Analyzing...</span>
-                              </div>
-                            ) : (
-                              <p className="text-[11px] text-text-secondary leading-relaxed bg-bg-primary p-3 rounded-xl border border-border-color">{aiRecoveryTip}</p>
-                            )}
+                            <button 
+                              onClick={handleOpenProtocolModal}
+                              disabled={aiLoading}
+                              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-accent-purple/10 hover:bg-accent-purple/20 text-accent-purple font-bold text-xs rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {aiLoading ? (
+                                <>
+                                  <div className="w-3 h-3 border-2 border-accent-purple/30 border-t-accent-purple rounded-full animate-spin" />
+                                  Analyzing Protocol...
+                                </>
+                              ) : (
+                                'View Full AI Protocol'
+                              )}
+                            </button>
                           </div>
 
                           {/* Static recovery tips */}
@@ -290,10 +363,14 @@ export default function RecoveryDashboard() {
                              <p className="text-xs font-bold text-text-secondary uppercase">Recommended Stretching</p>
                              <div className="space-y-2">
                                {(RECOVERY_TIPS_MAP[selectedMuscle] || ['Deep tissue release', 'Dynamic range prep']).map((tip, i) => (
-                                 <div key={i} className="p-3 bg-bg-primary rounded-xl border border-border-color flex items-center justify-between group cursor-pointer hover:border-accent-teal transition-colors">
-                                    <span className="text-xs font-medium">{tip}</span>
-                                    <ChevronRight size={14} className="text-text-secondary group-hover:text-accent-teal" />
-                                 </div>
+                                 <button key={i} onClick={() => handleStretchClick(tip)} disabled={stretchLoading === tip} className="w-full p-3 bg-bg-primary rounded-xl border border-border-color flex items-center justify-between group cursor-pointer hover:border-accent-teal transition-colors disabled:opacity-50">
+                                    <span className="text-xs font-medium text-left">{tip}</span>
+                                    {stretchLoading === tip ? (
+                                      <div className="w-3.5 h-3.5 border-2 border-accent-purple/30 border-t-accent-purple rounded-full animate-spin flex-shrink-0" />
+                                    ) : (
+                                      <ChevronRight size={14} className="text-text-secondary group-hover:text-accent-teal flex-shrink-0" />
+                                    )}
+                                 </button>
                                ))}
                              </div>
                           </div>
@@ -421,7 +498,29 @@ export default function RecoveryDashboard() {
             </table>
           </div>
         </Card>
-      </div>
+      </motion.div>
+
+      <Modal isOpen={showAiModal} onClose={() => setShowAiModal(false)} title={modalTitle}>
+        <div className="space-y-4">
+          {selectedMuscle && modalTitle === 'AI Recovery Protocol' && (
+             <div className="p-3 bg-accent-teal/5 border border-accent-teal/20 rounded-2xl text-center mb-4">
+                <p className="text-[10px] font-black text-accent-teal uppercase mb-1">{MUSCLE_NAMES[selectedMuscle]}</p>
+                <p className="text-sm font-bold text-text-primary">
+                  {muscleStats.find(m => m.id === selectedMuscle)?.progress}% Recovered
+                </p>
+             </div>
+          )}
+          <div className="text-sm text-text-secondary leading-relaxed max-h-[60vh] overflow-y-auto scrollbar-thin pr-2">
+            {formatContent(modalContent)}
+          </div>
+          <button 
+            onClick={() => setShowAiModal(false)}
+            className="w-full mt-4 bg-bg-card-hover text-text-primary py-2.5 rounded-xl font-bold text-xs hover:bg-bg-primary transition-colors border border-border-color"
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
     </>
   )
 }

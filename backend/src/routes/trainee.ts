@@ -29,6 +29,8 @@ router.get('/profile', authenticate, requireRole('trainee'), async (req: AuthReq
       goals: JSON.parse(profile.goals || '[]'),
       accessibilityNeeds: JSON.parse(profile.accessibilityNeeds || '[]'),
       preferredWorkoutTypes: JSON.parse(profile.preferredWorkoutTypes || '[]'),
+      medicalConditions: JSON.parse(profile.medicalConditions || '[]'),
+      injuredLimbs: JSON.parse(profile.injuredLimbs || '[]'),
       onboardingComplete: !!profile.onboardingComplete,
       currentCoach
     });
@@ -40,7 +42,7 @@ router.get('/profile', authenticate, requireRole('trainee'), async (req: AuthReq
 
 router.put('/profile', authenticate, requireRole('trainee'), async (req: AuthRequest, res: Response) => {
   try {
-    const { age, weight, height, fitnessLevel, goals, accessibilityNeeds, preferredWorkoutTypes, name } = req.body;
+    const { age, weight, height, fitnessLevel, goals, accessibilityNeeds, preferredWorkoutTypes, name, gender, medicalConditions, injuredLimbs, injuryDescription, trainingMotivation } = req.body;
     if (age !== undefined) await db.run('UPDATE trainee_profiles SET age = ? WHERE user_id = ?', age, req.user!.id);
     if (weight !== undefined) await db.run('UPDATE trainee_profiles SET weight = ? WHERE user_id = ?', weight, req.user!.id);
     if (height !== undefined) await db.run('UPDATE trainee_profiles SET height = ? WHERE user_id = ?', height, req.user!.id);
@@ -48,6 +50,11 @@ router.put('/profile', authenticate, requireRole('trainee'), async (req: AuthReq
     if (goals !== undefined) await db.run('UPDATE trainee_profiles SET goals = ? WHERE user_id = ?', JSON.stringify(goals), req.user!.id);
     if (accessibilityNeeds !== undefined) await db.run('UPDATE trainee_profiles SET accessibility_needs = ? WHERE user_id = ?', JSON.stringify(accessibilityNeeds), req.user!.id);
     if (preferredWorkoutTypes !== undefined) await db.run('UPDATE trainee_profiles SET preferred_workout_types = ? WHERE user_id = ?', JSON.stringify(preferredWorkoutTypes), req.user!.id);
+    if (gender !== undefined) await db.run('UPDATE trainee_profiles SET gender = ? WHERE user_id = ?', gender, req.user!.id);
+    if (medicalConditions !== undefined) await db.run('UPDATE trainee_profiles SET medical_conditions = ? WHERE user_id = ?', JSON.stringify(medicalConditions), req.user!.id);
+    if (injuredLimbs !== undefined) await db.run('UPDATE trainee_profiles SET injured_limbs = ? WHERE user_id = ?', JSON.stringify(injuredLimbs), req.user!.id);
+    if (injuryDescription !== undefined) await db.run('UPDATE trainee_profiles SET injury_description = ? WHERE user_id = ?', injuryDescription, req.user!.id);
+    if (trainingMotivation !== undefined) await db.run('UPDATE trainee_profiles SET training_motivation = ? WHERE user_id = ?', trainingMotivation, req.user!.id);
     if (name) await db.run('UPDATE users SET name = ? WHERE id = ?', name, req.user!.id);
     res.json({ message: 'Profile updated' });
   } catch (err) {
@@ -57,9 +64,15 @@ router.put('/profile', authenticate, requireRole('trainee'), async (req: AuthReq
 
 router.post('/onboarding', authenticate, requireRole('trainee'), async (req: AuthRequest, res: Response) => {
   try {
-    const { age, weight, height, fitnessLevel, goals, accessibilityNeeds, preferredWorkoutTypes } = req.body;
-    await db.run('UPDATE trainee_profiles SET age = ?, weight = ?, height = ?, fitness_level = ?, goals = ?, accessibility_needs = ?, preferred_workout_types = ? WHERE user_id = ?',
-      age, weight, height, fitnessLevel, JSON.stringify(goals), JSON.stringify(accessibilityNeeds), JSON.stringify(preferredWorkoutTypes), req.user!.id);
+    const { age, weight, height, fitnessLevel, goals, accessibilityNeeds, preferredWorkoutTypes, gender, medicalConditions, injuredLimbs, injuryDescription, trainingMotivation } = req.body;
+    await db.run(
+      'UPDATE trainee_profiles SET age = ?, weight = ?, height = ?, fitness_level = ?, goals = ?, accessibility_needs = ?, preferred_workout_types = ?, gender = ?, medical_conditions = ?, injured_limbs = ?, injury_description = ?, training_motivation = ? WHERE user_id = ?',
+      age, weight, height, fitnessLevel,
+      JSON.stringify(goals), JSON.stringify(accessibilityNeeds), JSON.stringify(preferredWorkoutTypes),
+      gender || '', JSON.stringify(medicalConditions || []), JSON.stringify(injuredLimbs || []),
+      injuryDescription || '', trainingMotivation || '',
+      req.user!.id
+    );
     await db.run('UPDATE users SET onboarding_complete = 1 WHERE id = ?', req.user!.id);
     await awardXP(req.user!.id, 100);
     await generateDailyTasks(req.user!.id);

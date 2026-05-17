@@ -12,6 +12,7 @@ import { X, Dumbbell, Trophy, Target, Flame, Search, Plus, Trash2, Info, Zap, Us
 import Button from '../common/Button'
 import { AnatomyFront, AnatomyBack } from './AnatomyModel'
 import { useWorkoutStore } from '../../store/workoutStore'
+import { toast } from 'sonner'
 
 interface StrengthCalculatorProps {
   isOpen: boolean
@@ -156,9 +157,15 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
   }), [])
 
   // Auto-import last workout when opening (once per open)
-  const importLastWorkout = useCallback(() => {
-    if (completedWorkouts.length === 0) return
-    const lastWorkout = completedWorkouts[0]
+  const importLastWorkout = useCallback(async () => {
+    let workouts = completedWorkouts;
+    
+    if (workouts.length === 0) {
+      toast.error("No completed solo workouts found.")
+      return
+    }
+
+    const lastWorkout = workouts[0]
     const imported: PresetExercise[] = []
 
     for (const exLog of lastWorkout.exercises) {
@@ -296,16 +303,21 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+        <motion.div 
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none' }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          className="fixed inset-0 z-[100] pointer-events-auto"
+        >
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
           
-          <motion.div initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            className="bg-bg-primary w-full max-w-6xl h-[92vh] rounded-3xl overflow-hidden shadow-2xl relative z-10 border border-border-color flex flex-col md:flex-row">
+          <div className="absolute inset-y-0 left-0 lg:left-[260px] right-0 flex items-center justify-center p-4 pointer-events-none">
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 20, pointerEvents: 'none' }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-bg-primary mt-16 w-full max-w-[1450px] h-[88vh] max-h-[900px] rounded-3xl overflow-hidden shadow-2xl relative z-10 border border-border-color flex flex-col md:flex-row pointer-events-auto">
             
             {/* Left: AI Anatomy Model Viewport */}
             <div 
-              className="flex-1 bg-gradient-to-br from-bg-primary via-bg-card to-bg-primary p-6 flex flex-col items-center relative overflow-hidden h-full border-b md:border-b-0"
+              className="flex-1 bg-gradient-to-br from-bg-primary via-bg-card to-bg-primary p-6 flex flex-col items-center relative overflow-y-auto scrollbar-thin h-full border-b md:border-b-0"
               onMouseMove={handleMouseMove}
             >
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -322,7 +334,7 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
                       opacity: 1, 
                       scale: 1,
                       x: mousePos.x - (window.innerWidth < 1024 ? 0 : 380),
-                      y: mousePos.y - 100
+                      y: mousePos.y - 180
                     }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.5 }}
@@ -357,10 +369,10 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
 
               <div className="relative z-10 flex-1 w-full flex items-center justify-center min-h-0 py-4 lg:py-8">
                  <div className="h-full flex gap-4 md:gap-16 items-center justify-center">
-                    <div className="h-full max-h-[450px] drop-shadow-[0_0_30px_rgba(255,255,255,0.05)] transform transition-all duration-700 hover:scale-110">
+                    <div className="h-full max-h-[600px] drop-shadow-[0_0_30px_rgba(255,255,255,0.05)] transform transition-all duration-700 hover:scale-110">
                       <AnatomyFront getColor={(m) => getRank(stats[m], m).color} setHoveredMuscle={setHoveredMuscle} hoveredMuscle={hoveredMuscle} />
                     </div>
-                    <div className="h-full max-h-[450px] drop-shadow-[0_0_30px_rgba(255,255,255,0.05)] transform transition-all duration-700 hover:scale-110">
+                    <div className="h-full max-h-[600px] drop-shadow-[0_0_30px_rgba(255,255,255,0.05)] transform transition-all duration-700 hover:scale-110">
                       <AnatomyBack getColor={(m) => getRank(stats[m], m).color} setHoveredMuscle={setHoveredMuscle} hoveredMuscle={hoveredMuscle} />
                     </div>
                  </div>
@@ -494,16 +506,14 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
                       className="w-full bg-transparent text-2xl font-black outline-none text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                  </div>
 
-                 {/* Import from last workout button */}
-                 {completedWorkouts.length > 0 && (
-                   <button
-                     onClick={importLastWorkout}
-                     className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-teal/10 border border-accent-teal/20 rounded-2xl text-accent-teal hover:bg-accent-teal/20 transition-all group"
-                   >
-                     <Download size={14} className="group-hover:animate-bounce" />
-                     <span className="text-[11px] font-bold uppercase tracking-wider">Import Last Solo Workout</span>
-                   </button>
-                 )}
+                 {/* Import from last workout button always shows */}
+                 <button
+                   onClick={importLastWorkout}
+                   className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-teal/10 border border-accent-teal/20 rounded-2xl text-accent-teal hover:bg-accent-teal/20 transition-all group"
+                 >
+                   <Download size={14} className="group-hover:animate-bounce" />
+                   <span className="text-[11px] font-bold uppercase tracking-wider">Import Last Solo Workout</span>
+                 </button>
 
                  <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
@@ -522,7 +532,7 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
                           <div className="fixed inset-0 z-40" onClick={() => setShowLibrary(false)} />
                           <motion.div 
                             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                            className="absolute left-0 right-0 top-full mt-2 bg-bg-card border border-border-color rounded-2xl shadow-2xl z-50 max-h-[400px] overflow-y-auto scrollbar-thin divide-y divide-border-color"
+                            className="absolute left-0 right-0 top-full mt-2 bg-white/95 dark:bg-[#0a0a0b]/95 backdrop-blur-3xl border border-border-color rounded-2xl shadow-2xl z-50 max-h-[400px] overflow-y-auto scrollbar-thin divide-y divide-border-color"
                           >
                             {filteredLibrary.length === 0 ? (
                               <div className="p-8 text-center text-text-secondary text-xs font-bold">No results found.</div>
@@ -618,7 +628,8 @@ export default function StrengthCalculator({ isOpen, onClose }: StrengthCalculat
               </div>
             </div>
           </motion.div>
-        </div>
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>
   )

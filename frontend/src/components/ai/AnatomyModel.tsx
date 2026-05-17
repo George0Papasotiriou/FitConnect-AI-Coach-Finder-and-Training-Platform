@@ -6,7 +6,7 @@
  * Unauthorized copying, modification, or distribution is strictly prohibited.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 
 export type MuscleGroup = 'chest' | 'upperBack' | 'lowerBack' | 'deltoids' | 'biceps' | 'triceps' | 'forearms' | 'quads' | 'hamstrings' | 'glutes' | 'calves' | 'core';
 
@@ -19,19 +19,32 @@ interface AnatomyProps {
 }
 
 export function AnatomyFront({ getColor, setHoveredMuscle, hoveredMuscle, onMuscleClick, selectedMuscle }: AnatomyProps) {
+  const [localHover, setLocalHover] = useState<MuscleGroup | null>(null);
+  const activeHover = hoveredMuscle ?? localHover;
+
   const p = (group: MuscleGroup, d: string) => {
-    const isActive = hoveredMuscle === group || selectedMuscle === group;
+    const isActive = activeHover === group || selectedMuscle === group;
+    const color = getColor(group);
+    const isHighlighted = color !== 'rgba(100,100,120,0.06)';
+    const glowColor = color === 'var(--accent-purple)' ? 'rgba(16,185,129,0.6)' : 'rgba(16,185,129,0.3)';
     return (
       <path 
-        fill={getColor(group)} 
-        stroke={isActive ? getColor(group) : 'rgba(255,255,255,0.1)'} 
-        strokeWidth="1.5"
+        fill={color} 
+        stroke={isActive ? color : 'rgba(255,255,255,0.1)'} 
+        strokeWidth={isActive ? '2' : '1.5'}
         strokeLinejoin="round"
         strokeLinecap="round"
-        style={{ opacity: isActive ? 1 : 0.8, transition: 'all 0.3s', cursor: 'pointer' }}
-        onMouseEnter={() => setHoveredMuscle && setHoveredMuscle(group)}
-        onMouseLeave={() => setHoveredMuscle && setHoveredMuscle(null)}
-        onClick={() => onMuscleClick && onMuscleClick(group)}
+        style={{
+          opacity: isActive ? 1 : 0.8,
+          transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+          cursor: isHighlighted ? 'pointer' : 'default',
+          transform: isActive && isHighlighted ? 'scale(1.02)' : 'scale(1)',
+          transformOrigin: 'center',
+          filter: isActive && isHighlighted ? `drop-shadow(0 0 4px ${glowColor})` : 'none',
+        }}
+        onMouseEnter={() => { if (isHighlighted) { setLocalHover(group); setHoveredMuscle?.(group); } }}
+        onMouseLeave={() => { setLocalHover(null); setHoveredMuscle?.(null); }}
+        onClick={() => isHighlighted && onMuscleClick?.(group)}
         d={d}
         transform="translate(-1.25 -2.47)"
       />
@@ -75,19 +88,32 @@ export function AnatomyFront({ getColor, setHoveredMuscle, hoveredMuscle, onMusc
 }
 
 export function AnatomyBack({ getColor, setHoveredMuscle, hoveredMuscle, onMuscleClick, selectedMuscle }: AnatomyProps) {
+  const [localHover, setLocalHover] = useState<MuscleGroup | null>(null);
+  const activeHover = hoveredMuscle ?? localHover;
+
   const p = (group: MuscleGroup, d: string) => {
-    const isActive = hoveredMuscle === group || selectedMuscle === group;
+    const isActive = activeHover === group || selectedMuscle === group;
+    const color = getColor(group);
+    const isHighlighted = color !== 'rgba(100,100,120,0.06)';
+    const glowColor = color === 'var(--accent-purple)' ? 'rgba(16,185,129,0.6)' : 'rgba(16,185,129,0.3)';
     return (
       <path 
-        fill={getColor(group)} 
-        stroke={isActive ? getColor(group) : 'rgba(255,255,255,0.1)'} 
-        strokeWidth="1.5"
+        fill={color} 
+        stroke={isActive ? color : 'rgba(255,255,255,0.1)'} 
+        strokeWidth={isActive ? '2' : '1.5'}
         strokeLinejoin="round"
         strokeLinecap="round"
-        style={{ opacity: isActive ? 1 : 0.8, transition: 'all 0.3s', cursor: 'pointer' }}
-        onMouseEnter={() => setHoveredMuscle && setHoveredMuscle(group)}
-        onMouseLeave={() => setHoveredMuscle && setHoveredMuscle(null)}
-        onClick={() => onMuscleClick && onMuscleClick(group)}
+        style={{
+          opacity: isActive ? 1 : 0.8,
+          transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+          cursor: isHighlighted ? 'pointer' : 'default',
+          transform: isActive && isHighlighted ? 'scale(1.02)' : 'scale(1)',
+          transformOrigin: 'center',
+          filter: isActive && isHighlighted ? `drop-shadow(0 0 4px ${glowColor})` : 'none',
+        }}
+        onMouseEnter={() => { if (isHighlighted) { setLocalHover(group); setHoveredMuscle?.(group); } }}
+        onMouseLeave={() => { setLocalHover(null); setHoveredMuscle?.(null); }}
+        onClick={() => isHighlighted && onMuscleClick?.(group)}
         d={d}
         transform="translate(-1.25 -2.47)"
       />

@@ -46,7 +46,14 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const trainer = await db.get(`SELECT tp.*, u.name, u.email, u.avatar FROM trainer_profiles tp JOIN users u ON tp.user_id = u.id WHERE tp.user_id = ? AND tp.application_status = 'approved'`, req.params.id);
     if (!trainer) return res.status(404).json({ message: 'Trainer not found' });
-    res.json({ ...trainer, specialties: JSON.parse(trainer.specialties || '[]'), credentials: JSON.parse(trainer.credentials || '[]') });
+    res.json({
+      ...trainer,
+      specialties: JSON.parse(trainer.specialties || '[]'),
+      credentials: JSON.parse(trainer.credentials || '[]'),
+      languages: JSON.parse(trainer.languages || '[]'),
+      coachingStyle: JSON.parse(trainer.coachingStyle || '[]'),
+      certifications: JSON.parse(trainer.certifications || '[]'),
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -69,7 +76,15 @@ trainerRouter.get('/profile', authenticate, requireRole('trainer'), async (req: 
   try {
     const profile = await db.get('SELECT tp.*, u.name, u.email, u.avatar FROM trainer_profiles tp JOIN users u ON tp.user_id = u.id WHERE tp.user_id = ?', req.user!.id);
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
-    res.json({ ...profile, specialties: JSON.parse(profile.specialties || '[]'), credentials: JSON.parse(profile.credentials || '[]'), documents: JSON.parse(profile.documents || '[]') });
+    res.json({
+      ...profile,
+      specialties: JSON.parse(profile.specialties || '[]'),
+      credentials: JSON.parse(profile.credentials || '[]'),
+      documents: JSON.parse(profile.documents || '[]'),
+      languages: JSON.parse(profile.languages || '[]'),
+      coachingStyle: JSON.parse(profile.coachingStyle || '[]'),
+      certifications: JSON.parse(profile.certifications || '[]'),
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -126,10 +141,31 @@ trainerRouter.get('/stats', authenticate, requireRole('trainer'), async (req: Au
 
 trainerRouter.get('/clients', authenticate, requireRole('trainer'), async (req: AuthRequest, res) => {
   try {
-    const requests = await db.all(`SELECT cr.*, u.name, u.avatar, tp.fitness_level, tp.goals FROM coach_requests cr JOIN users u ON cr.trainee_id = u.id LEFT JOIN trainee_profiles tp ON tp.user_id = cr.trainee_id WHERE cr.trainer_id = ? ORDER BY cr.created_at DESC`, req.user!.id);
+    const requests = await db.all(
+      `SELECT cr.*, u.name, u.avatar, tp.fitness_level, tp.goals, tp.age, tp.gender,
+       tp.medical_conditions, tp.injured_limbs, tp.injury_description, tp.training_motivation,
+       tp.accessibility_needs, tp.weight, tp.height, tp.preferred_workout_types
+       FROM coach_requests cr
+       JOIN users u ON cr.trainee_id = u.id
+       LEFT JOIN trainee_profiles tp ON tp.user_id = cr.trainee_id
+       WHERE cr.trainer_id = ? ORDER BY cr.created_at DESC`,
+      req.user!.id
+    );
     const result = requests.map(r => ({
       id: r.id, status: r.status, createdAt: r.createdAt,
-      trainee: { id: r.traineeId, name: r.name, avatar: r.avatar, fitnessLevel: r.fitnessLevel, goals: JSON.parse(r.goals || '[]') }
+      trainee: {
+        id: r.traineeId, name: r.name, avatar: r.avatar,
+        fitnessLevel: r.fitnessLevel,
+        goals: JSON.parse(r.goals || '[]'),
+        age: r.age, gender: r.gender,
+        weight: r.weight, height: r.height,
+        medicalConditions: JSON.parse(r.medicalConditions || '[]'),
+        injuredLimbs: JSON.parse(r.injuredLimbs || '[]'),
+        injuryDescription: r.injuryDescription || '',
+        trainingMotivation: r.trainingMotivation || '',
+        accessibilityNeeds: JSON.parse(r.accessibilityNeeds || '[]'),
+        preferredWorkoutTypes: JSON.parse(r.preferredWorkoutTypes || '[]'),
+      }
     }));
     res.json(result);
   } catch (err) {
@@ -182,9 +218,15 @@ trainerRouter.get('/sessions', authenticate, requireRole('trainer'), async (req:
 
 trainerRouter.post('/application', authenticate, requireRole('trainer'), async (req: AuthRequest, res) => {
   try {
-    const { bio, description, specialties, experience, hourlyRate } = req.body;
-    await db.run('UPDATE trainer_profiles SET bio = ?, description = ?, specialties = ?, experience = ?, hourly_rate = ?, application_status = ?, updated_at = NOW() WHERE user_id = ?',
-      bio, description, JSON.stringify(specialties), experience, hourlyRate, 'pending', req.user!.id);
+    const { bio, description, specialties, experience, hourlyRate, age, gender, languages, trainingPhilosophy, availabilityHours, certifications, coachingStyle } = req.body;
+    await db.run(
+      'UPDATE trainer_profiles SET bio = ?, description = ?, specialties = ?, experience = ?, hourly_rate = ?, application_status = ?, age = ?, gender = ?, languages = ?, training_philosophy = ?, availability_hours = ?, certifications = ?, coaching_style = ?, onboarding_complete = 1, updated_at = NOW() WHERE user_id = ?',
+      bio, description, JSON.stringify(specialties), experience, hourlyRate, 'pending',
+      age || null, gender || '', JSON.stringify(languages || []),
+      trainingPhilosophy || '', availabilityHours || '',
+      JSON.stringify(certifications || []), JSON.stringify(coachingStyle || []),
+      req.user!.id
+    );
 
     const admins = await db.all("SELECT id FROM users WHERE role = 'admin'");
     for (const admin of admins) {

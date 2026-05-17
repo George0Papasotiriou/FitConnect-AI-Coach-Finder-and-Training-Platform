@@ -46,7 +46,7 @@ export default function Chat() {
 
   return (
     <>
-      <Helmet><title>Chat — Insta Coach</title></Helmet>
+      <Helmet><title>Chat — AbiliFit</title></Helmet>
       <div className="h-[calc(100vh-150px)] md:h-[calc(100vh-120px)] flex rounded-2xl overflow-hidden border border-border-color bg-bg-card shadow-sm">
         {/* Conversation List */}
         <div className={`w-full md:w-80 lg:w-96 border-r border-border-color flex flex-col ${selectedConv ? 'hidden md:flex' : 'flex'}`}>

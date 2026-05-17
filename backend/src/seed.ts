@@ -161,7 +161,7 @@ export async function seed() {
     await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', convId, trainerIds[i]);
 
     const messages = [
-      { sender: trainerIds[i], content: "Welcome to Insta Coach! I'm excited to start training with you. 💪 Let's crush those goals together!" },
+      { sender: trainerIds[i], content: "Welcome to AbiliFit! I'm excited to start training with you. 💪 Let's crush those goals together!" },
       { sender: traineeIds[i], content: "Thank you! I've been looking forward to this. What should I prepare for our first session?" },
       { sender: trainerIds[i], content: "Just wear comfortable clothes and have a water bottle ready. We'll start with an assessment to understand your current fitness level and goals." },
       { sender: traineeIds[i], content: "That sounds perfect. I'm a bit nervous but also very motivated! 🎯" },
@@ -239,7 +239,7 @@ export async function seed() {
 
   for (const traineeId of traineeIds) {
     await db.run("INSERT INTO notifications (id, user_id, type, title, body, action_url, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      uuid(), traineeId, 'system', '🎉 Welcome to Insta Coach!', 'Start your fitness journey by finding the perfect coach for you.', '/search', '{}');
+      uuid(), traineeId, 'system', '🎉 Welcome to AbiliFit!', 'Start your fitness journey by finding the perfect coach for you.', '/search', '{}');
     await db.run("INSERT INTO notifications (id, user_id, type, title, body, action_url, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
       uuid(), traineeId, 'achievement', '🏆 First Steps', 'You\'ve unlocked your first achievement! Keep going!', '/achievements', '{}');
   }

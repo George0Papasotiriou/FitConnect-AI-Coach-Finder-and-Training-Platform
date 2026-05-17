@@ -90,7 +90,7 @@ export default function BountyBoard() {
 
   return (
     <>
-      <Helmet><title>Bounty Board — Insta Coach</title></Helmet>
+      <Helmet><title>Bounty Board — AbiliFit</title></Helmet>
       
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -193,7 +193,7 @@ export default function BountyBoard() {
              [1, 2, 3, 4].map(i => <div key={i} className="h-48 rounded-3xl bg-bg-card animate-pulse" />)
            ) : (
              <AnimatePresence>
-               {bounties.map((b) => (
+               {[...bounties].sort((a, b) => (a.status === 'completed' ? 1 : 0) - (b.status === 'completed' ? 1 : 0)).map((b) => (
                  <motion.div
                    key={b.id}
                    initial={{ opacity: 0, scale: 0.95 }}
@@ -201,7 +201,7 @@ export default function BountyBoard() {
                    exit={{ opacity: 0, scale: 0.95 }}
                    layout
                  >
-                   <Card className={`h-full relative overflow-hidden group transition-all ${b.status === 'completed' ? 'opacity-60 border-accent-teal/30' : 'hover:border-accent-purple/40 shadow-xl shadow-transparent hover:shadow-accent-purple/5'}`}>
+                   <Card className={`h-full relative overflow-hidden group transition-all ${b.status === 'completed' ? 'opacity-40 grayscale-[0.8] border-dashed border-border-color bg-bg-primary/50 pointer-events-none' : 'hover:border-accent-purple/40 shadow-xl shadow-transparent hover:shadow-accent-purple/5'}`}>
                       {b.status === 'completed' && (
                         <div className="absolute top-4 right-4 z-10">
                            <CheckCircle2 className="text-accent-teal" size={24} />

@@ -21,6 +21,7 @@ import CoachCard from '../../components/trainer/CoachCard'
 import Avatar from '../../components/common/Avatar'
 import Spinner from '../../components/common/Spinner'
 import Button from '../../components/common/Button'
+import { BentoGrid, type BentoItem } from '../../components/ui/bento-grid'
 import { toast } from 'sonner'
 
 const CATEGORIES = [
@@ -175,7 +176,7 @@ export default function CoachSearch() {
 
   return (
     <>
-      <Helmet><title>Find a Coach — Insta Coach</title></Helmet>
+      <Helmet><title>Find a Coach — AbiliFit</title></Helmet>
 
       <AnimatePresence mode="wait">
         {/* STEP 1: Browse Categories */}
@@ -347,9 +348,21 @@ export default function CoachSearch() {
                     <p className="text-text-secondary text-sm">Try adjusting your search</p>
                   </div>
                 ) : (
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {trainers.map((t, i) => <CoachCard key={t.id || t.userId} trainer={t} index={i} />)}
-                  </div>
+                  <BentoGrid items={trainers.map((t, i) => {
+                    const catMatch = CATEGORIES.find(c => c.subcategories.some(s => t.specialties?.includes(s)))
+                    return {
+                      title: t.name,
+                      description: t.bio || 'Experienced fitness professional',
+                      icon: catMatch?.icon || <Dumbbell className="w-4 h-4 text-accent-purple" />,
+                      status: `⭐ ${t.rating?.toFixed(1) || '—'}`,
+                      tags: t.specialties?.slice(0, 3) || [],
+                      meta: `${t.experience}y exp · $${t.hourlyRate}/hr`,
+                      cta: 'View Profile →',
+                      colSpan: i === 0 ? 2 : 1,
+                      hasPersistentHover: i === 0,
+                      onClick: () => navigate(`/coach/${t.userId}`),
+                    } as BentoItem
+                  })} />
                 )}
               </motion.div>
             )}

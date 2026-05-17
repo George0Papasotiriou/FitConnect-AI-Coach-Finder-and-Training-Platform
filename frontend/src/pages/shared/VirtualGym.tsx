@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import {
@@ -35,6 +36,7 @@ import { EXERCISES, Exercise, MUSCLE_MAP, BODY_PART_FILTERS } from '../../data/e
 import { AnatomyFront, AnatomyBack, MuscleGroup } from '../../components/ai/AnatomyModel'
 import { useWorkoutStore, CATEGORY_TO_MUSCLES, type WorkoutExerciseLog } from '../../store/workoutStore'
 import { aiApi } from '../../api/ai'
+import { exerciseApi } from '../../api/exercise'
 import { format } from 'date-fns'
 
 // ── Types ──
@@ -81,6 +83,7 @@ function ExerciseThumb({ exercise, onClick, isFav, onFav }: {
   const containerRef = useRef<HTMLDivElement>(null)
   const vidRef = useRef<HTMLVideoElement>(null)
   const [isVisible, setIsVisible] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   // Only start loading video when card scrolls into viewport
   useEffect(() => {
@@ -99,7 +102,7 @@ function ExerciseThumb({ exercise, onClick, isFav, onFav }: {
     if (!isVisible) return
     const v = vidRef.current
     if (!v) return
-    const handler = () => { v.currentTime = 0.5; v.pause() }
+    const handler = () => { v.currentTime = 0.5; v.pause(); setIsLoaded(true) }
     v.addEventListener('loadeddata', handler, { once: true })
     return () => v.removeEventListener('loadeddata', handler)
   }, [isVisible])
@@ -107,20 +110,20 @@ function ExerciseThumb({ exercise, onClick, isFav, onFav }: {
   return (
     <div ref={containerRef} className="group cursor-pointer" onClick={onClick}>
       <div className="aspect-[4/5] bg-bg-card rounded-2xl overflow-hidden border border-border-color relative transition-all duration-200 group-hover:border-accent-purple/40 group-hover:shadow-lg group-hover:-translate-y-1">
-        {isVisible ? (
+        {/* Placeholder (always present behind video) */}
+        <div className={`absolute inset-0 flex items-center justify-center bg-bg-card transition-opacity duration-500 ${isLoaded ? 'opacity-0' : 'opacity-100'}`}>
+          <Dumbbell size={28} className="text-text-secondary opacity-20 animate-pulse" />
+        </div>
+
+        {isVisible && (
           <video
             ref={vidRef}
             src={exercise.videoUrl}
             muted
             playsInline
             preload="metadata"
-            className="w-full h-full object-contain pointer-events-none"
+            className={`w-full h-full object-contain pointer-events-none transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           />
-        ) : (
-          /* Lightweight placeholder while not in viewport */
-          <div className="w-full h-full flex items-center justify-center">
-            <Dumbbell size={28} className="text-text-secondary opacity-20" />
-          </div>
         )}
         {/* Fav button */}
         <button
@@ -177,6 +180,35 @@ export default function SoloTrainingHub() {
   // Favorites
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
 
+  // Muscle hover for anatomy
+  const [hoveredMuscle, setHoveredMuscle] = useState<MuscleGroup | null>(null)
+
+  // Exercise ratings from DB
+  const [exerciseRatings, setExerciseRatings] = useState<Record<string, { avg: number; count: number; userRating: number | null }>>({})
+  const [ratingAnimKey, setRatingAnimKey] = useState(0)
+
+  // Load ratings on mount
+  useEffect(() => {
+    exerciseApi.getRatings().then(data => setExerciseRatings(data.ratings)).catch(() => {})
+  }, [])
+
+  const handleRateExercise = async (exerciseId: string, rating: number) => {
+    setRatingAnimKey(k => k + 1)
+    // Optimistic update
+    setExerciseRatings(prev => ({
+      ...prev,
+      [exerciseId]: { avg: rating, count: (prev[exerciseId]?.count || 0) + (prev[exerciseId]?.userRating ? 0 : 1), userRating: rating }
+    }))
+    try {
+      const res = await exerciseApi.rateExercise(exerciseId, rating)
+      setExerciseRatings(prev => ({
+        ...prev,
+        [exerciseId]: { avg: res.avgRating, count: res.totalRatings, userRating: res.userRating }
+      }))
+      toast.success(`Rated ${rating}/5 ⭐`, { duration: 1500 })
+    } catch { toast.error('Failed to save rating') }
+  }
+
   // Workout store integration
   const workoutStore = useWorkoutStore()
   const [sessionActive, setSessionActive] = useState(false)
@@ -201,10 +233,15 @@ export default function SoloTrainingHub() {
       const matchSearch = ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ex.bodyPart.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ex.equipment.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchPart = activeBodyPart === 'All' || ex.bodyPart === activeBodyPart ||
-        ex.muscleGroups.primary.some(m => m.toLowerCase().includes(activeBodyPart.toLowerCase()))
+      
+      const matchPart = activeBodyPart === 'All' 
+        ? true 
+        : activeBodyPart === 'Favorites' 
+          ? favorites.has(ex.id)
+          : (ex.bodyPart === activeBodyPart || ex.muscleGroups.primary.some(m => m.toLowerCase().includes(activeBodyPart.toLowerCase())))
+          
       return matchSearch && matchPart
-    }), [searchQuery, activeBodyPart])
+    }), [searchQuery, activeBodyPart, favorites])
 
   // ── Voice ──
   useEffect(() => {
@@ -393,14 +430,20 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
     return musicUrl
   }, [musicUrl])
 
+  // Lock body scroll when on the Solo Trainer to ensure a fixed app-like layout
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = 'unset' }
+  }, [])
+
   // ══════════════════════
   // ██  RENDER
   // ══════════════════════
   return (
     <>
-      <Helmet><title>Solo Trainer — Insta Coach</title></Helmet>
+      <Helmet><title>Solo Trainer — AbiliFit</title></Helmet>
 
-      <div className="min-h-[calc(100vh-80px)] bg-bg-primary text-text-primary">
+      <div className="h-[calc(100vh-90px)] overflow-hidden bg-bg-primary text-text-primary -mt-2 md:-mt-4">
         <AnimatePresence mode="wait">
 
           {/* ═══════════════════════════════════ */}
@@ -408,10 +451,10 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
           {/* ═══════════════════════════════════ */}
           {view === 'HUB' && (
             <motion.div key="hub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="max-w-[1600px] mx-auto px-4 md:px-6 py-4 md:py-6"
+              className="max-w-[1600px] mx-auto px-4 md:px-6 pt-0 pb-4 h-full flex flex-col"
             >
               {/* Top Bar */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 md:mb-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-accent-purple flex items-center justify-center shadow-lg">
                     <Activity className="text-white" size={20} />
@@ -439,10 +482,10 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
               </div>
 
               {/* Main Grid - responsive */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5" style={{ minHeight: 'calc(100vh - 220px)' }}>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0">
 
                 {/* LEFT: Training Panel */}
-                <div className="lg:col-span-3 flex flex-col gap-4 order-2 lg:order-1">
+                <div className="lg:col-span-3 flex flex-col gap-4 order-2 lg:order-1 h-full overflow-y-auto no-scrollbar">
                   <Card className="!p-5 !rounded-2xl flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Active Exercise</span>
@@ -542,8 +585,8 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
                 </div>
 
                 {/* CENTER: Video + Session */}
-                <div className="lg:col-span-6 flex flex-col gap-4 order-1 lg:order-2">
-                  <div className="relative bg-bg-card rounded-2xl overflow-hidden shadow-lg border border-border-color aspect-video lg:aspect-auto lg:flex-1 min-h-[240px]">
+                <div className="lg:col-span-6 flex flex-col gap-4 order-1 lg:order-2 h-full min-h-0">
+                  <div className="relative bg-bg-card rounded-2xl overflow-hidden shadow-lg border border-border-color flex-1 min-h-0">
                     <video key={selectedExercise.id} src={selectedExercise.videoUrl}
                       autoPlay loop muted playsInline className="w-full h-full object-contain" />
                     <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
@@ -576,7 +619,7 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
                   </div>
 
                   {/* Session Log */}
-                  <Card className="!p-4 !rounded-2xl max-h-[200px] lg:max-h-[180px] overflow-y-auto">
+                  <Card className="!p-4 !rounded-2xl shrink-0 h-[220px] overflow-y-auto">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Flame size={14} className="text-orange-500" />
@@ -620,18 +663,33 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
                 </div>
 
                 {/* RIGHT: Anatomy + Milestone + Music */}
-                <div className="lg:col-span-3 flex flex-col gap-4 order-3">
+                <div className="lg:col-span-3 flex flex-col gap-4 order-3 h-full overflow-y-auto no-scrollbar">
                   {/* Anatomy */}
-                  <Card className="!p-4 !rounded-2xl relative overflow-hidden flex-1 min-h-[200px]">
+                  <Card className="!p-4 !rounded-2xl relative overflow-hidden flex-1 flex flex-col min-h-[220px]">
                     <div className="flex items-center gap-2 mb-2">
                       <Activity size={12} className="text-accent-purple" />
                       <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Muscle Map</span>
                     </div>
-                    <div className="flex gap-2 items-stretch" style={{ height: 'calc(100% - 50px)' }}>
-                      <div className="flex-1"><AnatomyFront getColor={m => getMuscleFill(selectedExercise, m)} /></div>
-                      <div className="flex-1"><AnatomyBack getColor={m => getMuscleFill(selectedExercise, m)} /></div>
+                    
+                    <div className="h-6 mb-2 flex items-center justify-center shrink-0">
+                      {hoveredMuscle ? (
+                        <div className="px-2 py-0.5 bg-accent-purple/10 rounded-md text-center animate-in fade-in zoom-in duration-200">
+                          <span className="text-[10px] font-bold text-accent-purple capitalize">{hoveredMuscle.replace(/([A-Z])/g, ' $1').trim()}</span>
+                          <span className="text-[8px] text-text-secondary ml-1">
+                            {selectedExercise.muscleGroups.primary.some(p => MUSCLE_MAP[p.toLowerCase()] === hoveredMuscle) ? '(Primary)' : '(Secondary)'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[9px] text-text-secondary/50 font-medium tracking-wide">Hover over a muscle</span>
+                      )}
                     </div>
-                    <div className="flex gap-3 mt-1">
+
+                    <div className="flex gap-2 flex-1 min-h-0">
+                      <div className="flex-1"><AnatomyFront getColor={m => getMuscleFill(selectedExercise, m)} hoveredMuscle={hoveredMuscle} setHoveredMuscle={setHoveredMuscle} /></div>
+                      <div className="flex-1"><AnatomyBack getColor={m => getMuscleFill(selectedExercise, m)} hoveredMuscle={hoveredMuscle} setHoveredMuscle={setHoveredMuscle} /></div>
+                    </div>
+
+                    <div className="flex gap-3 mt-2 justify-center shrink-0">
                       <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-accent-purple" /><span className="text-[8px] font-bold text-text-secondary">Primary</span></div>
                       <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full" style={{ background: 'rgba(16,185,129,0.3)' }} /><span className="text-[8px] font-bold text-text-secondary">Secondary</span></div>
                     </div>
@@ -684,186 +742,14 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
           )}
 
           {/* ═══════════════════════════════════ */}
-          {/*  BESTIARY VIEW                      */}
+          {/*  BESTIARY VIEW (moved to portal below) */}
           {/* ═══════════════════════════════════ */}
-          {view === 'BESTIARY' && (
-            <motion.div key="bestiary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-bg-primary flex flex-col"
-            >
-              {/* Header */}
-              <div className="bg-bg-card border-b border-border-color px-4 md:px-8 py-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-bg-card-hover border border-border-color flex items-center justify-center">
-                    <BookOpen size={16} className="text-text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-extrabold text-text-primary">Exercise Bestiary</h2>
-                    <p className="text-[10px] text-text-secondary">{filteredExercises.length} exercises</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="relative hidden sm:block">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
-                    <input type="text" placeholder="Search exercises, muscles, equipment..."
-                      value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                      className="w-64 md:w-80 bg-bg-primary rounded-lg py-2.5 pl-9 pr-4 text-[12px] font-medium outline-none border border-border-color focus:border-accent-purple/50 transition-all text-text-primary placeholder:text-text-secondary/50" />
-                  </div>
-                  <button onClick={() => { setView('HUB'); setSearchQuery(''); setActiveBodyPart('All') }}
-                    className="w-9 h-9 rounded-lg bg-bg-card-hover hover:bg-bg-primary flex items-center justify-center transition-colors border border-border-color">
-                    <X size={18} className="text-text-secondary" />
-                  </button>
-                </div>
-              </div>
 
-              {/* Mobile search */}
-              <div className="sm:hidden px-4 pt-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
-                  <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full bg-bg-card rounded-lg py-2.5 pl-9 pr-4 text-[12px] font-medium outline-none border border-border-color focus:border-accent-purple/50 text-text-primary placeholder:text-text-secondary/50" />
-                </div>
-              </div>
-
-              {/* Filters */}
-              <div className="px-4 md:px-8 py-3 flex gap-1.5 overflow-x-auto no-scrollbar">
-                {BODY_PART_FILTERS.map(f => (
-                  <button key={f} onClick={() => setActiveBodyPart(f)}
-                    className={`px-4 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all flex-shrink-0 ${activeBodyPart === f
-                      ? 'bg-accent-purple text-white shadow' : 'bg-bg-card text-text-secondary border border-border-color hover:border-accent-purple/30 hover:text-text-primary'}`}
-                  >{f}</button>
-                ))}
-              </div>
-
-              {/* Grid - static thumbnails, no autoplay */}
-              <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-                  {filteredExercises.map(ex => (
-                    <ExerciseThumb
-                      key={ex.id}
-                      exercise={ex}
-                      onClick={() => openDetail(ex)}
-                      isFav={favorites.has(ex.id)}
-                      onFav={() => toggleFavorite(ex.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {/* ═══════════════════════════════════ */}
-          {/*  EXERCISE DETAIL VIEW               */}
+          {/*  EXERCISE DETAIL VIEW (moved to portal below) */}
           {/* ═══════════════════════════════════ */}
-          {view === 'EXERCISE_DETAIL' && detailExercise && (
-            <motion.div key="detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-bg-primary flex flex-col overflow-y-auto"
-            >
-              {/* Nav */}
-              <div className="bg-bg-card border-b border-border-color px-4 md:px-8 py-3 flex items-center justify-between sticky top-0 z-10">
-                <button onClick={() => setView('BESTIARY')}
-                  className="flex items-center gap-1.5 text-text-secondary hover:text-accent-purple transition-colors">
-                  <ChevronLeft size={16} /> <span className="text-[11px] font-bold uppercase tracking-wider">Back</span>
-                </button>
-                <div className="flex gap-2">
-                  <button onClick={() => toggleFavorite(detailExercise.id)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border ${favorites.has(detailExercise.id) ? 'bg-accent-purple/10 text-accent-purple border-accent-purple/30' : 'bg-bg-card-hover text-text-secondary border-border-color hover:text-text-primary'}`}>
-                    <Bookmark size={12} className={favorites.has(detailExercise.id) ? 'fill-current' : ''} />
-                    {favorites.has(detailExercise.id) ? 'Saved' : 'Save'}
-                  </button>
-                  <Button size="sm" onClick={() => equipExercise(detailExercise)} leftIcon={<Play size={14} />} className="!rounded-lg">
-                    Start Training
-                  </Button>
-                </div>
-              </div>
 
-              <div className="max-w-5xl mx-auto w-full px-4 md:px-8 py-6">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  {/* Video + info */}
-                  <div className="lg:col-span-7 space-y-6">
-                    <div className="aspect-video bg-bg-card rounded-2xl overflow-hidden shadow-lg border border-border-color">
-                      <video src={detailExercise.videoUrl} autoPlay loop muted playsInline className="w-full h-full object-contain" />
-                    </div>
-
-                    <div>
-                      <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">{detailExercise.name}</h1>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="px-2.5 py-1 bg-accent-purple/10 text-accent-purple rounded-lg text-[11px] font-bold">{detailExercise.bodyPart}</span>
-                        <span className="px-2.5 py-1 bg-bg-card-hover text-text-secondary rounded-lg text-[11px] font-bold border border-border-color">{detailExercise.equipment}</span>
-                        <span className="px-2.5 py-1 bg-bg-card-hover text-text-secondary rounded-lg text-[11px] font-bold border border-border-color">{detailExercise.category}</span>
-                        <div className="flex gap-px ml-auto">
-                          {[1, 2, 3, 4, 5].map(i => (
-                            <Star key={i} size={14} className={i <= detailExercise.effectiveness ? 'text-yellow-400 fill-yellow-400' : 'text-text-secondary/20'} />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Card className="!p-5 !rounded-2xl">
-                      <h3 className="text-sm font-bold text-text-primary mb-2">About This Exercise</h3>
-                      <p className="text-sm text-text-secondary leading-relaxed">{detailExercise.description}</p>
-                    </Card>
-
-                    <Card className="!p-5 !rounded-2xl">
-                      <h3 className="text-sm font-bold text-text-primary mb-3">Step-by-Step Guide</h3>
-                      <div className="space-y-2.5">
-                        {detailExercise.steps.map((step, i) => (
-                          <div key={i} className="flex gap-3">
-                            <div className="w-6 h-6 rounded-md bg-accent-purple/10 text-accent-purple flex items-center justify-center text-[11px] font-bold flex-shrink-0">{i + 1}</div>
-                            <p className="text-sm text-text-secondary pt-0.5">{step}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-
-                    <Card className="!p-5 !rounded-2xl">
-                      <h3 className="text-sm font-bold text-text-primary mb-2">Pro Tips</h3>
-                      <div className="space-y-2">
-                        {detailExercise.tips.map((tip, i) => (
-                          <div key={i} className="flex gap-2 items-start">
-                            <CheckCircle size={13} className="text-accent-purple mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-text-secondary">{tip}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  </div>
-
-                  {/* Sidebar */}
-                  <div className="lg:col-span-5 space-y-5">
-                    <Card className="!p-5 !rounded-2xl">
-                      <h3 className="text-sm font-bold text-text-primary mb-3">Exercise Profile</h3>
-                      <div className="space-y-3">
-                        <PRow label="Body Part" value={detailExercise.bodyPart} />
-                        <PRow label="Equipment" value={detailExercise.equipment} />
-                        <PRow label="Category" value={detailExercise.category} />
-                        <PRow label="Primary Muscles" value={detailExercise.muscleGroups.primary.join(', ')} />
-                        <PRow label="Secondary Muscles" value={detailExercise.muscleGroups.secondary.join(', ') || 'None'} />
-                        <PRow label="Effectiveness" value={`${detailExercise.effectiveness}/5`} />
-                      </div>
-                    </Card>
-
-                    <Card className="!p-5 !rounded-2xl">
-                      <h3 className="text-sm font-bold text-text-primary mb-3">Muscles Targeted</h3>
-                      <div className="flex gap-4 justify-center">
-                        <div className="w-28">
-                          <AnatomyFront getColor={m => getMuscleFill(detailExercise, m)} />
-                          <p className="text-[9px] font-bold text-text-secondary text-center mt-1.5 uppercase tracking-wider">Front</p>
-                        </div>
-                        <div className="w-28">
-                          <AnatomyBack getColor={m => getMuscleFill(detailExercise, m)} />
-                          <p className="text-[9px] font-bold text-text-secondary text-center mt-1.5 uppercase tracking-wider">Back</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 justify-center mt-3 pt-3 border-t border-border-color">
-                        <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-accent-purple" /><span className="text-[9px] font-bold text-text-secondary">Primary</span></div>
-                        <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(16,185,129,0.3)' }} /><span className="text-[9px] font-bold text-text-secondary">Secondary</span></div>
-                      </div>
-                    </Card>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
         </AnimatePresence>
 
@@ -945,6 +831,216 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
           )}
         </AnimatePresence>
       </div>
+
+      {/* Portals appended to body */}
+      {createPortal(
+        <AnimatePresence>
+          {view === 'BESTIARY' && (
+            <motion.div key="bestiary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] bg-bg-primary flex flex-col"
+            >
+              {/* Header */}
+              <div className="bg-bg-card border-b border-border-color px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-bg-card-hover border border-border-color flex items-center justify-center">
+                    <BookOpen size={16} className="text-text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-text-primary">Exercise Bestiary</h2>
+                    <p className="text-[10px] text-text-secondary">{filteredExercises.length} exercises</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="relative hidden sm:block">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                    <input type="text" placeholder="Search exercises, muscles, equipment..."
+                      value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                      className="w-64 md:w-80 bg-bg-primary rounded-lg py-2.5 pl-9 pr-4 text-[12px] font-medium outline-none border border-border-color focus:border-accent-purple/50 transition-all text-text-primary placeholder:text-text-secondary/50" />
+                  </div>
+                  <button onClick={() => { setView('HUB'); setSearchQuery(''); setActiveBodyPart('All') }}
+                    className="w-9 h-9 rounded-lg bg-bg-card-hover hover:bg-bg-primary flex items-center justify-center transition-colors border border-border-color">
+                    <X size={18} className="text-text-secondary" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile search */}
+              <div className="sm:hidden px-4 pt-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                  <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full bg-bg-card rounded-lg py-2.5 pl-9 pr-4 text-[12px] font-medium outline-none border border-border-color focus:border-accent-purple/50 text-text-primary placeholder:text-text-secondary/50" />
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="px-4 md:px-8 py-3 flex gap-1.5 overflow-x-auto no-scrollbar">
+                {['All', 'Favorites', ...BODY_PART_FILTERS.filter(f => f !== 'All')].map(f => (
+                  <button key={f} onClick={() => setActiveBodyPart(f)}
+                    className={`px-4 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all flex-shrink-0 ${activeBodyPart === f
+                      ? 'bg-accent-purple text-white shadow' : 'bg-bg-card text-text-secondary border border-border-color hover:border-accent-purple/30 hover:text-text-primary'}`}
+                  >{f === 'Favorites' ? <span className="flex items-center gap-1.5"><Star size={12} className="fill-current" /> Favorites</span> : f}</button>
+                ))}
+              </div>
+
+              {/* Grid - static thumbnails, no autoplay */}
+              <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                  {filteredExercises.map(ex => (
+                    <ExerciseThumb
+                      key={ex.id}
+                      exercise={ex}
+                      onClick={() => openDetail(ex)}
+                      isFav={favorites.has(ex.id)}
+                      onFav={() => toggleFavorite(ex.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {view === 'EXERCISE_DETAIL' && detailExercise && (
+            <motion.div key="detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] bg-bg-primary flex flex-col overflow-y-auto"
+            >
+              {/* Nav */}
+              <div className="bg-bg-card border-b border-border-color px-4 md:px-8 py-3 flex items-center justify-between sticky top-0 z-10">
+                <button onClick={() => setView('BESTIARY')}
+                  className="flex items-center gap-1.5 text-text-secondary hover:text-accent-purple transition-colors">
+                  <ChevronLeft size={16} /> <span className="text-[11px] font-bold uppercase tracking-wider">Back</span>
+                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => toggleFavorite(detailExercise.id)}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border ${favorites.has(detailExercise.id) ? 'bg-accent-purple/10 text-accent-purple border-accent-purple/30' : 'bg-bg-card-hover text-text-secondary border-border-color hover:text-text-primary'}`}>
+                    <Bookmark size={12} className={favorites.has(detailExercise.id) ? 'fill-current' : ''} />
+                    {favorites.has(detailExercise.id) ? 'Saved' : 'Save'}
+                  </button>
+                  <Button size="sm" onClick={() => equipExercise(detailExercise)} leftIcon={<Play size={14} />} className="!rounded-lg">
+                    Start Training
+                  </Button>
+                </div>
+              </div>
+
+              <div className="max-w-5xl mx-auto w-full px-4 md:px-8 py-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Video + info */}
+                  <div className="lg:col-span-7 space-y-6">
+                    <div className="aspect-video bg-bg-card rounded-2xl overflow-hidden shadow-lg border border-border-color">
+                      <video src={detailExercise.videoUrl} autoPlay loop muted playsInline className="w-full h-full object-contain" />
+                    </div>
+
+                    <div>
+                      <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">{detailExercise.name}</h1>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="px-2.5 py-1 bg-accent-purple/10 text-accent-purple rounded-lg text-[11px] font-bold">{detailExercise.bodyPart}</span>
+                        <span className="px-2.5 py-1 bg-bg-card-hover text-text-secondary rounded-lg text-[11px] font-bold border border-border-color">{detailExercise.equipment}</span>
+                        <span className="px-2.5 py-1 bg-bg-card-hover text-text-secondary rounded-lg text-[11px] font-bold border border-border-color">{detailExercise.category}</span>
+                        <div className="flex gap-px ml-auto items-center">
+                          {[1, 2, 3, 4, 5].map(i => {
+                            const rd = exerciseRatings[detailExercise.id]
+                            const userR = rd?.userRating || 0
+                            const avgR = rd?.avg || detailExercise.effectiveness
+                            const filled = userR ? i <= userR : i <= Math.round(avgR)
+                            return (
+                              <button key={i} onClick={() => handleRateExercise(detailExercise.id, i)}
+                                className={`p-0.5 transition-all hover:scale-125 ${filled ? '' : 'opacity-40'}`}
+                                title={`Rate ${i}/5`}
+                              >
+                                <Star size={16} className={filled ? 'text-yellow-400 fill-yellow-400 star-pop' : 'text-text-secondary/40'} />
+                              </button>
+                            )
+                          })}
+                          {exerciseRatings[detailExercise.id] && (
+                            <span className="text-[10px] text-text-secondary ml-1.5">
+                              {exerciseRatings[detailExercise.id].avg.toFixed(1)} ({exerciseRatings[detailExercise.id].count})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Card className="!p-5 !rounded-2xl">
+                      <h3 className="text-sm font-bold text-text-primary mb-2">About This Exercise</h3>
+                      <p className="text-sm text-text-secondary leading-relaxed">{detailExercise.description}</p>
+                    </Card>
+
+                    <Card className="!p-5 !rounded-2xl">
+                      <h3 className="text-sm font-bold text-text-primary mb-3">Step-by-Step Guide</h3>
+                      <div className="space-y-2.5">
+                        {detailExercise.steps.map((step, i) => (
+                          <div key={i} className="flex gap-3">
+                            <div className="w-6 h-6 rounded-md bg-accent-purple/10 text-accent-purple flex items-center justify-center text-[11px] font-bold flex-shrink-0">{i + 1}</div>
+                            <p className="text-sm text-text-secondary pt-0.5">{step}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+
+                    <Card className="!p-5 !rounded-2xl">
+                      <h3 className="text-sm font-bold text-text-primary mb-2">Pro Tips</h3>
+                      <div className="space-y-2">
+                        {detailExercise.tips.map((tip, i) => (
+                          <div key={i} className="flex gap-2 items-start">
+                            <CheckCircle size={13} className="text-accent-purple mt-0.5 flex-shrink-0" />
+                            <p className="text-sm text-text-secondary">{tip}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Sidebar */}
+                  <div className="lg:col-span-5 space-y-5">
+                    <Card className="!p-5 !rounded-2xl">
+                      <h3 className="text-sm font-bold text-text-primary mb-3">Exercise Profile</h3>
+                      <div className="space-y-3">
+                        <PRow label="Body Part" value={detailExercise.bodyPart} />
+                        <PRow label="Equipment" value={detailExercise.equipment} />
+                        <PRow label="Category" value={detailExercise.category} />
+                        <PRow label="Primary Muscles" value={detailExercise.muscleGroups.primary.join(', ')} />
+                        <PRow label="Secondary Muscles" value={detailExercise.muscleGroups.secondary.join(', ') || 'None'} />
+                        <PRow label="Effectiveness" value={`${detailExercise.effectiveness}/5`} />
+                      </div>
+                    </Card>
+
+                    <Card className="!p-5 !rounded-2xl">
+                      <h3 className="text-sm font-bold text-text-primary mb-3">Muscles Targeted</h3>
+                      <div className="h-8 mb-2 flex items-center justify-center">
+                        {hoveredMuscle ? (
+                          <div className="px-3 py-1 bg-accent-purple/10 rounded-lg text-center animate-in fade-in zoom-in duration-200">
+                            <span className="text-[11px] font-bold text-accent-purple capitalize">{hoveredMuscle.replace(/([A-Z])/g, ' $1').trim()}</span>
+                            <span className="text-[9px] text-text-secondary ml-1">
+                              {detailExercise.muscleGroups.primary.some(p => MUSCLE_MAP[p.toLowerCase()] === hoveredMuscle) ? '(Primary)' : '(Secondary)'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-text-secondary/50 font-medium tracking-wide">Hover over a muscle</span>
+                        )}
+                      </div>
+                      <div className="flex gap-4 justify-center">
+                        <div className="w-28">
+                          <AnatomyFront getColor={m => getMuscleFill(detailExercise, m)} hoveredMuscle={hoveredMuscle} setHoveredMuscle={setHoveredMuscle} />
+                          <p className="text-[9px] font-bold text-text-secondary text-center mt-1.5 uppercase tracking-wider">Front</p>
+                        </div>
+                        <div className="w-28">
+                          <AnatomyBack getColor={m => getMuscleFill(detailExercise, m)} hoveredMuscle={hoveredMuscle} setHoveredMuscle={setHoveredMuscle} />
+                          <p className="text-[9px] font-bold text-text-secondary text-center mt-1.5 uppercase tracking-wider">Back</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 justify-center mt-3 pt-3 border-t border-border-color">
+                        <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-accent-purple" /><span className="text-[9px] font-bold text-text-secondary">Primary</span></div>
+                        <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(16,185,129,0.3)' }} /><span className="text-[9px] font-bold text-text-secondary">Secondary</span></div>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   )
 }

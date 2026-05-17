@@ -42,6 +42,7 @@ import uploadRoutes from './routes/upload.js';
 import billingRoutes from './routes/billing.js';
 import strengthRoutes from './routes/strength.js';
 import bountyRoutes from './routes/bounties.js';
+import exerciseRoutes from './routes/exercises.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -152,6 +153,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/strength', strengthRoutes);
 app.use('/api/bounties', bountyRoutes);
+app.use('/api/exercises', exerciseRoutes);
 
 
 // 2. STATIC ASSETS

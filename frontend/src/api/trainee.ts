@@ -15,12 +15,17 @@ export interface TraineeProfile {
   email: string
   avatar?: string
   age?: number
+  gender?: string
   weight?: number
   height?: number
   fitnessLevel: 'beginner' | 'intermediate' | 'advanced'
   goals: string[]
   accessibilityNeeds: string[]
   preferredWorkoutTypes: string[]
+  medicalConditions: string[]
+  injuredLimbs: string[]
+  injuryDescription?: string
+  trainingMotivation?: string
   currentCoach?: {
     id: string
     name: string
@@ -45,6 +50,11 @@ export interface OnboardingPayload {
   goals: string[]
   accessibilityNeeds: string[]
   preferredWorkoutTypes: string[]
+  gender?: string
+  injuredLimbs?: string[]
+  injuryDescription?: string
+  medicalConditions?: string[]
+  trainingMotivation?: string
 }
 
 export const traineeApi = {

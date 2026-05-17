@@ -134,7 +134,7 @@ export default function ApplicationReview() {
 
   return (
     <>
-      <Helmet><title>Application Review — Insta Coach Admin</title></Helmet>
+      <Helmet><title>Application Review — AbiliFit Admin</title></Helmet>
       <div className="space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between flex-wrap gap-4">
           <div>

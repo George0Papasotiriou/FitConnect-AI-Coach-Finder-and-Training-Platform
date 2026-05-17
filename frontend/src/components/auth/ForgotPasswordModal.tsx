@@ -176,7 +176,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }: Props) {
                     <div className="w-14 h-14 bg-accent-teal/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
                       <Shield size={24} className="text-accent-teal" />
                     </div>
-                    <p className="text-sm text-text-secondary">Open your <strong>Google Authenticator</strong> app and enter the 6-digit code for your Insta Coach account.</p>
+                    <p className="text-sm text-text-secondary">Open your <strong>Google Authenticator</strong> app and enter the 6-digit code for your AbiliFit account.</p>
                   </div>
                   <Input
                     label="Authenticator Code"

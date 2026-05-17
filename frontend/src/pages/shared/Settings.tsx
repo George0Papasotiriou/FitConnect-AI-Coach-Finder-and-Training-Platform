@@ -53,7 +53,7 @@ export default function Settings() {
 
   return (
     <>
-      <Helmet><title>Settings — Insta Coach</title></Helmet>
+      <Helmet><title>Settings — AbiliFit</title></Helmet>
       <div className="max-w-2xl mx-auto space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-black text-text-primary flex items-center gap-2"><SettingsIcon size={24} className="text-accent-purple" /> Settings</h1>

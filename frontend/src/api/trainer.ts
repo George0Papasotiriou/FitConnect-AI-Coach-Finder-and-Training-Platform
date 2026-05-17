@@ -15,6 +15,7 @@ export interface TrainerProfile {
   email: string
   avatar?: string
   bio: string
+  description?: string
   specialties: string[]
   experience: number
   hourlyRate: number
@@ -23,6 +24,15 @@ export interface TrainerProfile {
   credentials: string[]
   isAvailable: boolean
   applicationStatus: 'pending' | 'approved' | 'rejected'
+  // Extended questionnaire fields
+  age?: number
+  gender?: string
+  languages?: string[]
+  trainingPhilosophy?: string
+  availabilityHours?: string
+  certifications?: string[]
+  coachingStyle?: string[]
+  onboardingComplete?: boolean
 }
 
 export interface TrainerStats {
@@ -40,6 +50,16 @@ export interface ClientRequest {
     avatar?: string
     fitnessLevel: string
     goals: string[]
+    age?: number
+    gender?: string
+    weight?: number
+    height?: number
+    medicalConditions?: string[]
+    injuredLimbs?: string[]
+    injuryDescription?: string
+    trainingMotivation?: string
+    accessibilityNeeds?: string[]
+    preferredWorkoutTypes?: string[]
   }
   createdAt: string
   status: 'pending' | 'accepted' | 'rejected'
@@ -51,7 +71,14 @@ export interface TrainerApplicationPayload {
   specialties: string[]
   experience: number
   hourlyRate: number
-  certificates?: string[]
+  trainingPhilosophy?: string
+  // Questionnaire fields
+  age?: number
+  gender?: string
+  languages?: string[]
+  availabilityHours?: string
+  certifications?: string[]
+  coachingStyle?: string[]
 }
 
 export const trainerApi = {

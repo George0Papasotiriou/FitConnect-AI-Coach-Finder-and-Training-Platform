@@ -134,7 +134,7 @@ export default function VoiceOrb() {
                     aria-live="polite"
                     aria-atomic="true"
                   >
-                    <p className="text-sm text-accent-purple mb-1 font-medium">Insta Coach AI:</p>
+                    <p className="text-sm text-accent-purple mb-1 font-medium">AbiliFit AI:</p>
                     <p className="text-text-primary">{response}</p>
                   </motion.div>
                 )}

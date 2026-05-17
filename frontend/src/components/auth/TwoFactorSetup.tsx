@@ -140,7 +140,7 @@ export default function TwoFactorSetup({ onComplete, onSkip }: TwoFactorSetupPro
                 ) : data && (
                   <>
                     <div className="bg-white p-4 rounded-3xl inline-block shadow-xl shadow-accent-teal/10">
-                      <QRCodeSVG value={`otpauth://totp/InstaCoach:${user?.email}?secret=${data.secret}&issuer=InstaCoach`} size={180} />
+                      <QRCodeSVG value={`otpauth://totp/AbiliFit:${user?.email}?secret=${data.secret}&issuer=AbiliFit`} size={180} />
                     </div>
 
                     <div className="space-y-4 text-left">

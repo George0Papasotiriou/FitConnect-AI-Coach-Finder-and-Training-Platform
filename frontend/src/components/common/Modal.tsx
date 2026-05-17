@@ -70,29 +70,44 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', c
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={closeOnOverlay ? (e) => { if (e.target === e.currentTarget) onClose() } : undefined}
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? 'modal-title' : undefined}
         >
+          {/* Deep blurred overlay */}
           <motion.div
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/40 backdrop-blur-md"
+          />
+
+          {/* Glass modal panel */}
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 24 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className={`w-full ${sizeClasses[size]} bg-bg-card border border-border-color rounded-2xl shadow-2xl`}
+            exit={{ scale: 0.92, opacity: 0, y: 24 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className={`relative w-full ${sizeClasses[size]} rounded-3xl overflow-hidden
+              bg-[var(--glass-bg-heavy)] backdrop-blur-2xl border border-[var(--glass-border)]
+              shadow-[inset_0_1px_0_0_var(--glass-inner-highlight),0_4px_16px_0_var(--glass-shadow),0_24px_48px_-8px_var(--glass-shadow-heavy)]`}
           >
             {title && (
-              <div className="flex items-center justify-between p-6 border-b border-border-color">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--glass-border)]">
                 <h2 id="modal-title" className="text-lg font-bold text-text-primary">{title}</h2>
                 <button
                   ref={firstFocusableRef}
                   onClick={onClose}
-                  className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-card-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
+                  className="p-2 rounded-xl text-text-secondary hover:text-text-primary
+                    hover:bg-[var(--glass-bg)] hover:backdrop-blur-lg
+                    transition-all duration-200
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
                   aria-label="Close dialog"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
             )}
@@ -102,10 +117,11 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', c
                   <button
                     ref={firstFocusableRef}
                     onClick={onClose}
-                    className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-card-hover transition-colors"
+                    className="p-2 rounded-xl text-text-secondary hover:text-text-primary
+                      hover:bg-[var(--glass-bg)] transition-all duration-200"
                     aria-label="Close dialog"
                   >
-                    <X size={20} />
+                    <X size={18} />
                   </button>
                 </div>
               )}

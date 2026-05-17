@@ -27,8 +27,8 @@ export default function ProgressVisualizer() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <Helmet><title>Progress Visualizer — Insta Coach</title></Helmet>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8">
+      <Helmet><title>Progress Visualizer — AbiliFit</title></Helmet>
 
       <div className="flex items-center justify-between">
         <div>
@@ -123,6 +123,6 @@ export default function ProgressVisualizer() {
           <Button fullWidth variant="secondary" size="sm">Notify Coach</Button>
         </Card>
       </div>
-    </div>
+    </motion.div>
   )
 }

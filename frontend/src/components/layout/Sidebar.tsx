@@ -66,49 +66,61 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <motion.aside
-      animate={{ width: collapsed ? 72 : 256 }}
+      animate={{ width: collapsed ? 72 : 260 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed left-0 top-0 h-full bg-bg-card border-r border-border-color z-40 flex flex-col overflow-hidden"
+      className="fixed left-0 top-0 h-full z-40 flex flex-col overflow-hidden
+        bg-[var(--glass-bg-heavy)] backdrop-blur-2xl border-r border-[var(--glass-border)]
+        shadow-[1px_0_24px_-4px_var(--glass-shadow)]"
       aria-label="Main navigation"
     >
-      <div className="flex items-center justify-between p-4 border-b border-border-color h-16 flex-shrink-0">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-[var(--glass-border)] h-16 flex-shrink-0">
         <AnimatePresence>
           {!collapsed && (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2.5"
             >
-              <img src="/logo.png" alt="Insta Coach" className="w-8 h-8 rounded-lg object-contain" />
-              <span className="font-black text-lg gradient-text">Insta Coach</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-xl flex items-center justify-center shadow-lg shadow-accent-purple/20">
+                <Zap size={14} className="text-white" />
+              </div>
+              <span className="font-black text-lg gradient-text">AbiliFit</span>
             </motion.div>
           )}
         </AnimatePresence>
         {collapsed && (
-          <img src="/logo.png" alt="Insta Coach" className="w-8 h-8 rounded-lg object-contain mx-auto" />
+          <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-accent-purple/20">
+            <Zap size={14} className="text-white" />
+          </div>
         )}
         <button
           onClick={onToggle}
-          className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-card-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple ml-auto"
+          className="p-1.5 rounded-xl text-text-secondary hover:text-text-primary
+            hover:bg-[var(--glass-bg)] transition-all duration-200 ml-auto
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-thin" aria-label="Site navigation">
-        <ul className="space-y-1 px-2">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin" aria-label="Site navigation">
+        <ul className="space-y-0.5 px-2">
           {navItems.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
                 className={({ isActive }) => `
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
+                  flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-200
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple
                   ${isActive
-                    ? 'bg-accent-purple/20 text-accent-purple font-semibold'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}
+                    ? `bg-accent-purple/15 text-accent-purple font-semibold backdrop-blur-sm
+                       border border-accent-purple/15
+                       shadow-[inset_0_1px_0_0_rgba(16,185,129,0.1),0_0_12px_-4px_rgba(16,185,129,0.15)]`
+                    : 'text-text-secondary hover:text-text-primary hover:bg-[var(--glass-bg)] border border-transparent'}
                 `}
                 title={collapsed ? item.label : undefined}
               >
@@ -130,19 +142,21 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           ))}
         </ul>
 
-        <div className="mt-4 px-2 space-y-1 border-t border-border-color pt-4">
+        <div className="mt-3 px-2 space-y-0.5 border-t border-[var(--glass-border)] pt-3">
           <NavLink
             to="/notifications"
             className={({ isActive }) => `
-              flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 relative
-              ${isActive ? 'bg-accent-purple/20 text-accent-purple' : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}
+              flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-200 relative
+              ${isActive
+                ? 'bg-accent-purple/15 text-accent-purple border border-accent-purple/15'
+                : 'text-text-secondary hover:text-text-primary hover:bg-[var(--glass-bg)] border border-transparent'}
             `}
             title={collapsed ? 'Notifications' : undefined}
           >
             <span className="relative flex-shrink-0">
               <Bell size={20} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-orange text-white text-xs rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-orange text-white text-xs rounded-full flex items-center justify-center font-bold shadow-md">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -159,8 +173,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <NavLink
             to="/settings"
             className={({ isActive }) => `
-              flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
-              ${isActive ? 'bg-accent-purple/20 text-accent-purple' : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}
+              flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-200
+              ${isActive
+                ? 'bg-accent-purple/15 text-accent-purple border border-accent-purple/15'
+                : 'text-text-secondary hover:text-text-primary hover:bg-[var(--glass-bg)] border border-transparent'}
             `}
             title={collapsed ? 'Settings' : undefined}
           >
@@ -176,7 +192,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
       </nav>
 
-      <div className="p-4 border-t border-border-color flex-shrink-0">
+      {/* User footer */}
+      <div className="p-4 border-t border-[var(--glass-border)] flex-shrink-0">
         {!collapsed && user && (
           <div className="mb-3">
             <XPBar compact />
@@ -199,7 +216,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </AnimatePresence>
           <button
             onClick={handleLogout}
-            className="p-1.5 rounded-lg text-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
+            className="p-1.5 rounded-xl text-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple"
             aria-label="Log out"
             title="Log out"
           >

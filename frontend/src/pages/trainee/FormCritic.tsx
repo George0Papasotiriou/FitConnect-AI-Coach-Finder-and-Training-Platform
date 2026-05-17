@@ -122,9 +122,9 @@ You must answer their questions clearly, practically, and using workout biomecha
 
   return (
     <>
-      <Helmet><title>AI Form Critic — Insta Coach</title></Helmet>
+      <Helmet><title>AI Form Critic — AbiliFit</title></Helmet>
       
-      <div className="max-w-5xl mx-auto space-y-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-text-primary flex items-center gap-3">
@@ -302,7 +302,7 @@ You must answer their questions clearly, practically, and using workout biomecha
             </Card>
           </div>
         </div>
-      </div>
+      </motion.div>
     </>
   )
 }

@@ -86,7 +86,7 @@ export default function Call() {
 
   return (
     <>
-      <Helmet><title>Video Call — Insta Coach</title></Helmet>
+      <Helmet><title>Video Call — AbiliFit</title></Helmet>
       
       {/* 
           We no longer render VideoCall here. 

@@ -1,4 +1,6 @@
-/** @type {import('tailwindcss').Config} */// force tailwind config reload
+import flattenColorPalette from "tailwindcss/lib/util/flattenColorPalette";
+
+/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
   content: [
@@ -16,13 +18,19 @@ export default {
         'accent-orange': 'var(--accent-orange)',
         'text-primary': 'var(--text-primary)',
         'text-secondary': 'var(--text-secondary)',
-        'border-color': 'var(--border-color)'
+        'border-color': 'var(--border-color)',
+        foreground: 'var(--foreground)',
+        background: 'var(--background)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif']
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
       },
       borderWidth: {
         '3': '3px',
+      },
+      borderRadius: {
+        '4xl': '2rem',
+        '5xl': '2.5rem',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -41,11 +49,14 @@ export default {
         'scale-in': 'scaleIn 0.3s ease-out',
         'bounce-in': 'bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
         'radar-sweep': 'radarSweep 2s linear infinite',
+        'glass-shimmer': 'glassShimmer 3s ease-in-out infinite',
+        'subtle-float': 'subtleFloat 8s ease-in-out infinite',
+        aurora: "aurora 60s linear infinite",
       },
       keyframes: {
         glow: {
-          '0%': { boxShadow: '0 0 20px rgba(108, 99, 255, 0.3)' },
-          '100%': { boxShadow: '0 0 40px rgba(108, 99, 255, 0.8), 0 0 80px rgba(0, 212, 170, 0.4)' }
+          '0%': { boxShadow: '0 0 20px rgba(16, 185, 129, 0.3)' },
+          '100%': { boxShadow: '0 0 40px rgba(16, 185, 129, 0.6), 0 0 80px rgba(5, 150, 105, 0.3)' }
         },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
@@ -91,7 +102,23 @@ export default {
         radarSweep: {
           '0%': { transform: 'rotate(0deg)' },
           '100%': { transform: 'rotate(360deg)' }
-        }
+        },
+        glassShimmer: {
+          '0%, 100%': { opacity: '0.5' },
+          '50%': { opacity: '0.8' },
+        },
+        subtleFloat: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
+        aurora: {
+          from: {
+            backgroundPosition: "50% 50%, 50% 50%",
+          },
+          to: {
+            backgroundPosition: "350% 50%, 350% 50%",
+          },
+        },
       },
       backdropBlur: {
         xs: '2px'
@@ -99,9 +126,21 @@ export default {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'shimmer-gradient': 'linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.1), transparent)',
+        'shimmer-gradient': 'linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.08), transparent)',
       }
     }
   },
-  plugins: []
+  plugins: [addVariablesForColors]
+};
+
+// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
+function addVariablesForColors({ addBase, theme }: any) {
+  let allColors = flattenColorPalette(theme("colors"));
+  let newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
+  );
+
+  addBase({
+    ":root": newVars,
+  });
 }

@@ -6,7 +6,7 @@
  * Unauthorized copying, modification, or distribution is strictly prohibited.
  */
 
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import AppShell from './components/layout/AppShell'
 import Landing from './pages/Landing'
@@ -47,16 +47,29 @@ import GlobalCallOverlay from './components/call/GlobalCallOverlay'
 
 function PrivateRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, token } = useAuthStore()
+  const location = useLocation()
   if (!token || !user) return <Navigate to="/login" replace />
   if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />
+  // Redirect trainees to onboarding if they haven't completed it yet
+  if (
+    user.role === 'trainee' &&
+    user.onboardingComplete === false &&
+    location.pathname !== '/onboarding'
+  ) {
+    return <Navigate to="/onboarding" replace />
+  }
   return <>{children}</>
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { token, user } = useAuthStore()
+  const location = useLocation()
+  // Allow logged-in trainee to see /onboarding (they just registered but haven't completed setup)
+  if (location.pathname === '/onboarding') return <>{children}</>
   if (token && user) {
     if (user.role === 'trainer') return <Navigate to="/trainer/dashboard" replace />
     if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />
+    if (user.role === 'trainee' && user.onboardingComplete === false) return <Navigate to="/onboarding" replace />
     return <Navigate to="/trainee/dashboard" replace />
   }
   return <>{children}</>
@@ -86,7 +99,9 @@ export default function App() {
         <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-        <Route path="/trainer-application" element={<PublicRoute><TrainerApplication /></PublicRoute>} />
+        <Route path="/trainer-application" element={
+          <PrivateRoute roles={['trainer']}><TrainerApplication /></PrivateRoute>
+        } />
         <Route path="/onboarding" element={
           <PrivateRoute roles={['trainee']}>
             <TraineeOnboarding />

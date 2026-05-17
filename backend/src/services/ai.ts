@@ -27,7 +27,7 @@ function makeClient(apiKey: string) {
     apiKey,
     defaultHeaders: {
       'HTTP-Referer': 'https://fitconnect.app',
-      'X-Title': 'Insta Coach',
+      'X-Title': 'AbiliFit',
     },
   });
 }
@@ -35,14 +35,31 @@ function makeClient(apiKey: string) {
 const primaryClient = makeClient(process.env.OPENROUTER_API_KEY || '');
 const fallbackClient = makeClient(process.env.OPENROUTER_API_KEY_FALLBACK || process.env.OPENROUTER_API_KEY || '');
 
-async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Promise<string> {
-  const models = [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)];
-  const clients = [primaryClient, fallbackClient];
+function makeGeminiClient(apiKey: string) {
+  return new OpenAI({
+    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+    apiKey,
+  });
+}
 
-  for (const client of clients) {
-    for (const model of models) {
+const fallbackKeysAndModels = [
+  { client: primaryClient, models: [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)] },
+  { client: fallbackClient, models: [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)] },
+  ...(process.env.GEMINI_API_KEY_FALLBACK ? [{ client: makeGeminiClient(process.env.GEMINI_API_KEY_FALLBACK), models: ['gemini-2.5-flash', 'gemini-1.5-flash'] }] : []),
+  ...(process.env.NVIDIA_API_KEY_FALLBACK ? [{ client: makeClient(process.env.NVIDIA_API_KEY_FALLBACK), models: ['nvidia/llama-3.1-nemotron-70b-instruct', 'nvidia/nemotron-4-340b-instruct'] }] : []),
+  ...(process.env.OPENAI_API_KEY_FALLBACK ? [{ client: makeClient(process.env.OPENAI_API_KEY_FALLBACK), models: ['openai/chatgpt-4o-latest', 'openai/gpt-4o-mini'] }] : []),
+  ...(process.env.ZAI_API_KEY_FALLBACK ? [{ client: makeClient(process.env.ZAI_API_KEY_FALLBACK), models: ['zhipu/glm-4'] }] : []),
+  ...(process.env.MINIMAX_API_KEY_FALLBACK ? [{ client: makeClient(process.env.MINIMAX_API_KEY_FALLBACK), models: ['minimax/minimax-abab6.5'] }] : []),
+  ...(process.env.DEEPSEEK_API_KEY_FALLBACK ? [{ client: makeClient(process.env.DEEPSEEK_API_KEY_FALLBACK), models: ['deepseek/deepseek-chat'] }] : []),
+];
+
+export const exportedClientsForVision = fallbackKeysAndModels; // For analyzeFormImages
+
+async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Promise<string> {
+  for (const fallback of fallbackKeysAndModels) {
+    for (const model of fallback.models) {
       try {
-        const completion = await client.chat.completions.create({
+        const completion = await fallback.client.chat.completions.create({
           model,
           messages,
           max_tokens: maxTokens,
@@ -61,7 +78,7 @@ async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Prom
   return '';
 }
 
-const SYSTEM_PROMPT = `You are Insta Coach AI, an omniscient accessibility guide and fitness assistant for the Insta Coach platform. 
+const SYSTEM_PROMPT = `You are AbiliFit AI, an omniscient accessibility guide and fitness assistant for the AbiliFit platform. 
 You exist natively to help users with visual/hearing impairments navigate entirely by voice, as well as providing elite fitness advice.
 
 **CRITICAL PLATFORM ROUTE MAP:**
@@ -189,10 +206,6 @@ export async function getFormTip(exercise: string): Promise<string> {
 }
 export async function analyzeFormImages(imagesBase64: string[], exercise: string): Promise<{score: number, feedback: string[]}> {
   try {
-    const clients = [primaryClient, fallbackClient];
-    // Utilizing free models explicitly for vision!
-    const models = ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.2-90b-vision-instruct:free'];
-
     const contentObj: any[] = [
       {
         type: 'text',
@@ -212,10 +225,14 @@ Do not output markdown code blocks. Just the raw JSON string.`
 
     const messages = [{ role: 'user', content: contentObj }];
 
-    for (const client of clients) {
-      for (const model of models) {
+    for (const fallback of exportedClientsForVision) {
+      const modelsToTry = fallback.models.includes('gemini-2.5-flash') 
+        ? ['gemini-2.5-flash'] 
+        : ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.2-90b-vision-instruct:free'];
+
+      for (const model of modelsToTry) {
         try {
-          const completion = await client.chat.completions.create({
+          const completion = await fallback.client.chat.completions.create({
             model,
             messages: messages as any,
             max_tokens: 400,

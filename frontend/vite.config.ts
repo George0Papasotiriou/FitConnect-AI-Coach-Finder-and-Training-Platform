@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: 'Insta Coach',
-        short_name: 'Insta Coach',
+        name: 'AbiliFit',
+        short_name: 'AbiliFit',
         description: 'Find Your Perfect Coach. Transform Your Life.',
         theme_color: '#6c63ff',
         background_color: '#0a0a0f',

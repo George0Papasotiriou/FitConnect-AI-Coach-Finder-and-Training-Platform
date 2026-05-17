@@ -299,7 +299,7 @@ export default function TrainingPrograms() {
 
   return (
     <>
-      <Helmet><title>My Programs — Insta Coach</title></Helmet>
+      <Helmet><title>My Programs — AbiliFit</title></Helmet>
 
       <div className="space-y-6">
         {/* Header */}

@@ -135,7 +135,7 @@ router.post('/login', async (req, res: Response) => {
 // ── 2FA Setup ──
 router.post('/2fa/setup', authenticate, async (req: AuthRequest, res) => {
   try {
-    const secret = speakeasy.generateSecret({ name: `Insta Coach (${req.user!.email})` });
+    const secret = speakeasy.generateSecret({ name: `AbiliFit (${req.user!.email})` });
     await db.run('UPDATE users SET two_factor_secret = ? WHERE id = ?', secret.base32, req.user!.id);
     
     const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);

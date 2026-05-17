@@ -31,7 +31,7 @@ export default function Achievements() {
 
   return (
     <>
-      <Helmet><title>Achievements — Insta Coach</title></Helmet>
+      <Helmet><title>Achievements — AbiliFit</title></Helmet>
       <div className="space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl md:text-3xl font-black text-text-primary flex items-center gap-2">

@@ -184,6 +184,23 @@ export async function initializeDatabase() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled INTEGER DEFAULT 0;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_skipped INTEGER DEFAULT 0;
 
+    -- Trainee profile extended fields
+    ALTER TABLE trainee_profiles ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT '';
+    ALTER TABLE trainee_profiles ADD COLUMN IF NOT EXISTS medical_conditions TEXT DEFAULT '[]';
+    ALTER TABLE trainee_profiles ADD COLUMN IF NOT EXISTS injured_limbs TEXT DEFAULT '[]';
+    ALTER TABLE trainee_profiles ADD COLUMN IF NOT EXISTS injury_description TEXT DEFAULT '';
+    ALTER TABLE trainee_profiles ADD COLUMN IF NOT EXISTS training_motivation TEXT DEFAULT '';
+
+    -- Trainer profile extended fields
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS age INTEGER;
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT '';
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS languages TEXT DEFAULT '[]';
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS training_philosophy TEXT DEFAULT '';
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS availability_hours TEXT DEFAULT '';
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS certifications TEXT DEFAULT '[]';
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS coaching_style TEXT DEFAULT '[]';
+    ALTER TABLE trainer_profiles ADD COLUMN IF NOT EXISTS onboarding_complete INTEGER DEFAULT 0;
+
 
     CREATE TABLE IF NOT EXISTS coach_requests (
       id TEXT PRIMARY KEY,
@@ -386,6 +403,16 @@ export async function initializeDatabase() {
       feedback_json TEXT NOT NULL,
       score REAL,
       created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS exercise_ratings (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      exercise_id TEXT NOT NULL,
+      rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(user_id, exercise_id)
     );
   `);
 

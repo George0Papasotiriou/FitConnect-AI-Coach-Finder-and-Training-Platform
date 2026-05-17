@@ -102,7 +102,7 @@ router.get('/link-preview', authenticate, async (req: AuthRequest, res) => {
     try {
       const response = await fetch(url, {
         signal: controller.signal,
-        headers: { 'User-Agent': 'Insta Coach-Bot/1.0' }
+        headers: { 'User-Agent': 'AbiliFit-Bot/1.0' }
       });
       clearTimeout(timeout);
 
@@ -281,14 +281,14 @@ router.post('/chat', authenticate, async (req: AuthRequest, res) => {
     let systemPrompt = '';
     
     if (user.role === 'trainer') {
-      systemPrompt = `You are a high-level fitness business consultant and master coach. You are advising ${user.name}, a trainer on the Insta Coach platform. 
+      systemPrompt = `You are a high-level fitness business consultant and master coach. You are advising ${user.name}, a trainer on the AbiliFit platform. 
       Provide professional, actionable advice on exercise science, client psychological motivation, or business growth.`;
     } else {
       const profile = await db.get('SELECT goals, fitness_level FROM trainee_profiles WHERE user_id = ?', req.user!.id);
       const goals = profile ? JSON.parse(profile.goals || '[]') : [];
       const userContext = `User: ${user.name}. Goals: ${goals.join(', ') || 'not set'}. Fitness level: ${profile?.fitnessLevel || 'not set'}.`;
 
-      systemPrompt = `You are Insta Coach AI, a knowledgeable, friendly fitness and wellness coach. ${userContext}
+      systemPrompt = `You are AbiliFit AI, a knowledgeable, friendly fitness and wellness coach. ${userContext}
       Help with: fitness plans, workout tips, nutrition advice, recovery strategies, motivation, injury prevention, and app features.
       Be warm, specific, and encouraging. Format responses clearly with bullet points where helpful.`;
     }

@@ -28,21 +28,23 @@ export default function Card({
   ...props
 }: CardProps) {
   const base = `
-    rounded-2xl border
+    rounded-3xl border transition-all duration-400
     ${glass
-      ? 'backdrop-blur-xl bg-bg-card/80 border-accent-purple/20'
-      : 'bg-bg-card border-border-color'}
-    ${gradient ? 'bg-gradient-to-br from-bg-card to-bg-card-hover' : ''}
+      ? 'glass-card'
+      : `bg-[var(--glass-bg-heavy)] backdrop-blur-xl border-[var(--glass-border)]
+         shadow-[inset_0_1px_0_0_var(--glass-inner-highlight),0_1px_3px_0_var(--glass-shadow),0_4px_16px_-2px_var(--glass-shadow)]`
+    }
+    ${gradient ? 'bg-gradient-to-br from-[var(--glass-bg)] to-[var(--glass-bg-heavy)]' : ''}
     ${paddingClasses[padding]}
-    ${hover ? 'hover:border-accent-purple/40 hover:bg-bg-card-hover transition-all duration-200 cursor-pointer' : ''}
+    ${hover ? `hover:border-accent-purple/30 hover:shadow-[inset_0_1px_0_0_var(--glass-inner-highlight),0_2px_8px_0_var(--glass-shadow),0_12px_32px_-4px_var(--glass-shadow-heavy)] cursor-pointer` : ''}
     ${className}
   `
 
   if (hover) {
     return (
       <motion.div
-        whileHover={{ y: -2 }}
-        transition={{ type: 'spring', stiffness: 300 }}
+        whileHover={{ y: -3, scale: 1.005 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         className={base}
         {...(props as React.ComponentProps<typeof motion.div>)}
       >

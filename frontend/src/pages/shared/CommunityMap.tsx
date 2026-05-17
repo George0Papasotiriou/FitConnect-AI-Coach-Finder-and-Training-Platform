@@ -156,7 +156,7 @@ export default function CommunityMap() {
 
   return (
     <>
-      <Helmet><title>Social Sweat Map — Insta Coach</title></Helmet>
+      <Helmet><title>Social Sweat Map — AbiliFit</title></Helmet>
 
       <div className="max-w-[1600px] mx-auto min-h-screen flex flex-col p-6 space-y-8 bg-bg-primary/30">
         {/* AAA Navigation Bar */}

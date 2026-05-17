@@ -6,6 +6,7 @@
  * Unauthorized copying, modification, or distribution is strictly prohibited.
  */
 
+import { useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import { useNavigate } from 'react-router-dom'
@@ -13,7 +14,48 @@ import {
   Camera, Brain, Heart, Sun, Search, 
   ArrowRight, Sparkles, TrendingUp, ShieldCheck, Box
 } from 'lucide-react'
-import Card from '../../components/common/Card'
+
+function TiltCard({ children, className, onClick, delay }: { children: React.ReactNode; className?: string; onClick?: () => void; delay: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  const handleMouse = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = ref.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const midX = rect.width / 2
+    const midY = rect.height / 2
+    const rotateX = ((y - midY) / midY) * -6
+    const rotateY = ((x - midX) / midX) * 6
+    el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`
+  }, [])
+
+  const handleLeave = useCallback(() => {
+    const el = ref.current
+    if (el) el.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)'
+  }, [])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+      onClick={onClick}
+      className={className}
+    >
+      <div
+        ref={ref}
+        onMouseMove={handleMouse}
+        onMouseLeave={handleLeave}
+        className="h-full will-change-transform"
+        style={{ transition: 'transform 0.15s ease-out' }}
+      >
+        {children}
+      </div>
+    </motion.div>
+  )
+}
 
 export default function ProgressHub() {
   const navigate = useNavigate()
@@ -86,13 +128,14 @@ export default function ProgressHub() {
 
   return (
     <>
-      <Helmet><title>My Progress — Insta Coach</title></Helmet>
+      <Helmet><title>My Progress — AbiliFit</title></Helmet>
       
       <div className="max-w-5xl mx-auto space-y-8">
+        {/* Hero section with shimmer */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }} 
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-2"
+          className="text-center space-y-2 relative"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-purple/10 border border-accent-purple/20 text-accent-purple text-xs font-bold uppercase tracking-widest mb-2">
             <Sparkles size={12} /> Performance Center
@@ -103,25 +146,26 @@ export default function ProgressHub() {
           <p className="text-text-secondary max-w-xl mx-auto font-medium">
             Everything you need to track, analyze, and optimize your fitness journey in one powerful dashboard.
           </p>
+          {/* Shimmer line */}
+          <div className="w-40 h-px mx-auto mt-3 bg-gradient-to-r from-transparent via-accent-purple/40 to-transparent animate-shimmer bg-[length:200%_100%]" />
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((item, i) => (
-            <motion.div
+            <TiltCard
               key={item.to}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -5 }}
+              delay={i * 0.07}
               onClick={() => navigate(item.to)}
               className="group cursor-pointer"
             >
               <div className="h-full bg-bg-card border border-border-color rounded-[2.5rem] p-8 relative overflow-hidden transition-all duration-300 group-hover:border-white/10 group-hover:shadow-2xl group-hover:shadow-black/50">
                 {/* Background Gradient */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                {/* Inner glow border */}
+                <div className="absolute inset-[1px] rounded-[2.45rem] border border-white/[0.04] opacity-0 group-hover:opacity-100 transition-opacity" />
                 
                 <div className="relative z-10 flex flex-col h-full">
-                  <div className={`w-14 h-14 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
+                  <div className={`w-14 h-14 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-lg`}>
                     {item.icon}
                   </div>
                   
@@ -135,14 +179,18 @@ export default function ProgressHub() {
                   </p>
 
                   <div className="mt-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-50 group-hover:opacity-100 group-hover:text-accent-purple transition-all">
-                    <ShieldCheck size={12} /> Live Metrics Active
+                    <span className="relative flex items-center justify-center">
+                      <ShieldCheck size={12} />
+                      <span className="absolute w-2 h-2 rounded-full bg-accent-purple/50 pulsing-dot" />
+                    </span>
+                    Live Metrics Active
                   </div>
                 </div>
 
                 {/* Decorative Elements */}
                 <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/5 blur-3xl rounded-full" />
               </div>
-            </motion.div>
+            </TiltCard>
           ))}
         </div>
 

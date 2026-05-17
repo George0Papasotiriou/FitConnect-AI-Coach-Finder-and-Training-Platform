@@ -69,7 +69,7 @@ export default function CoachProfile() {
 
   return (
     <>
-      <Helmet><title>{trainer.name} — Insta Coach</title></Helmet>
+      <Helmet><title>{trainer.name} — AbiliFit</title></Helmet>
       <div className="max-w-3xl mx-auto space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="relative overflow-hidden">

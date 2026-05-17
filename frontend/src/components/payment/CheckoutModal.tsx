@@ -115,7 +115,7 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess, type, traine
                   Pay Now
                 </Button>
                 <p className="text-[10px] text-center text-text-secondary px-4">
-                  By clicking Pay Now, you agree to our Terms of Service and Privacy Policy. Insta Coach keeps a flat €3 processing fee.
+                  By clicking Pay Now, you agree to our Terms of Service and Privacy Policy. AbiliFit keeps a flat €3 processing fee.
                 </p>
               </div>
             </div>
