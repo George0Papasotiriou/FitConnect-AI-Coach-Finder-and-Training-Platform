@@ -70,7 +70,7 @@ function ProfileDrawer({ client, onClose, onAccept, onReject, onMessage }: {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-end"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'rgba(15, 23, 42, 0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       <motion.div
@@ -78,36 +78,41 @@ function ProfileDrawer({ client, onClose, onAccept, onReject, onMessage }: {
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="h-full w-full max-w-md overflow-y-auto"
-        style={{ background: 'var(--bg-secondary, #1a1d2e)', borderLeft: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}
+        className="h-full w-full max-w-md overflow-y-auto glass-surface flex flex-col relative"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-5 border-b border-border-color"
-          style={{ background: 'var(--bg-secondary, #1a1d2e)' }}>
-          <h2 className="text-lg font-black text-text-primary">Client Profile</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-border-color/30 backdrop-blur-md"
+          style={{ background: 'var(--glass-bg-heavy)' }}>
+          <div>
+            <h2 className="text-xl font-black tracking-tight text-text-primary">Client Profile</h2>
+            <p className="text-[11px] text-text-secondary font-medium tracking-wide uppercase mt-0.5">Details & Health Metrics</p>
+          </div>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all">
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-text-primary/5 border border-transparent hover:border-border-color/30 transition-all duration-300">
             <CloseIcon size={18} />
           </button>
         </div>
 
-        <div className="p-5 space-y-6">
+        <div className="p-6 space-y-6 flex-1">
           {/* Identity */}
-          <div className="flex items-center gap-4">
-            <Avatar src={t.avatar} name={t.name} size="xl" />
-            <div>
-              <h3 className="text-xl font-black text-text-primary">{t.name}</h3>
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <div className="flex items-center gap-4 bg-bg-card/45 p-4 rounded-2xl border border-border-color/20 shadow-sm">
+            <div className="relative flex-shrink-0">
+              <div className="absolute inset-0 bg-accent-purple/20 blur-xl rounded-full" />
+              <Avatar src={t.avatar} name={t.name} size="xl" className="relative rounded-full shadow-lg" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-2xl font-black text-text-primary tracking-tight truncate">{t.name}</h3>
+              <div className="flex flex-wrap gap-1.5 mt-2">
                 {t.fitnessLevel && (
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-medium capitalize"
-                    style={{ background: 'rgba(139,92,246,0.15)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.3)' }}>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
+                    style={{ background: 'rgba(16, 185, 129, 0.08)', color: 'var(--accent-purple)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                     {t.fitnessLevel}
                   </span>
                 )}
                 {t.gender && (
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-medium"
-                    style={{ background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.25)' }}>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
+                    style={{ background: 'rgba(99,102,241,0.08)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)' }}>
                     {t.gender}
                   </span>
                 )}
@@ -118,40 +123,43 @@ function ProfileDrawer({ client, onClose, onAccept, onReject, onMessage }: {
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: <User size={14} />, label: 'Age', value: t.age ? `${t.age} yrs` : '—' },
-              { icon: <Scale size={14} />, label: 'Weight', value: t.weight ? `${t.weight} kg` : '—' },
-              { icon: <Ruler size={14} />, label: 'Height', value: t.height ? `${t.height} cm` : '—' },
+              { icon: <User size={15} className="text-accent-purple" />, label: 'Age', value: t.age ? `${t.age} yrs` : '—' },
+              { icon: <Scale size={15} className="text-accent-teal" />, label: 'Weight', value: t.weight ? `${t.weight} kg` : '—' },
+              { icon: <Ruler size={15} className="text-accent-orange" />, label: 'Height', value: t.height ? `${t.height} cm` : '—' },
             ].map(({ icon, label, value }) => (
-              <div key={label} className="rounded-xl p-3 text-center" style={{ background: 'var(--bg-primary, #0f1117)' }}>
-                <div className="flex justify-center mb-1 text-text-secondary">{icon}</div>
-                <p className="text-sm font-bold text-text-primary">{value}</p>
-                <p className="text-xs text-text-secondary">{label}</p>
+              <div key={label} className="glass-card rounded-2xl p-4 text-center flex flex-col items-center justify-center border border-border-color/10 shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-bg-primary/80 flex items-center justify-center mb-1.5 shadow-sm">{icon}</div>
+                <p className="text-sm font-black text-text-primary">{value}</p>
+                <p className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mt-0.5">{label}</p>
               </div>
             ))}
           </div>
 
           {/* Goals */}
           {(t.goals?.length ?? 0) > 0 && (
-            <div>
-              <h4 className="text-sm font-bold text-text-primary mb-2 flex items-center gap-2">
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
                 <Target size={14} className="text-accent-purple" /> Goals
               </h4>
               <div className="flex flex-wrap gap-1.5">
-                {t.goals!.map(g => <Badge key={g} variant="purple" size="sm">{g}</Badge>)}
+                {t.goals!.map(g => (
+                  <span key={g} className="text-xs px-3 py-1 rounded-xl font-bold bg-accent-purple/10 text-accent-purple border border-accent-purple/20 shadow-sm capitalize">
+                    {g}
+                  </span>
+                ))}
               </div>
             </div>
           )}
 
           {/* Workout Preferences */}
           {(t.preferredWorkoutTypes?.length ?? 0) > 0 && (
-            <div>
-              <h4 className="text-sm font-bold text-text-primary mb-2 flex items-center gap-2">
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
                 <Zap size={14} className="text-accent-teal" /> Preferred Workouts
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {t.preferredWorkoutTypes!.map(w => (
-                  <span key={w} className="text-xs px-2.5 py-0.5 rounded-full font-medium"
-                    style={{ background: 'rgba(20,184,166,0.12)', color: '#5eead4', border: '1px solid rgba(20,184,166,0.25)' }}>
+                  <span key={w} className="text-xs px-3 py-1 rounded-xl font-bold bg-accent-teal/10 text-accent-teal border border-accent-teal/20 shadow-sm">
                     {w}
                   </span>
                 ))}
@@ -160,51 +168,48 @@ function ProfileDrawer({ client, onClose, onAccept, onReject, onMessage }: {
           )}
 
           {/* ── Body Injury Figure ── */}
-          <div>
-            <h4 className="text-sm font-bold text-text-primary mb-3 flex items-center gap-2">
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
               <Activity size={14} className="text-red-400" />
               Body — Injuries & Pain Points
               {hasInjuries && (
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.3)' }}>
-                  {injuryLabels.length} area{injuryLabels.length !== 1 ? 's' : ''} marked
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  {injuryLabels.length} area{injuryLabels.length !== 1 ? 's' : ''}
                 </span>
               )}
             </h4>
 
             {hasInjuries ? (
-              <div className="rounded-2xl p-4 flex flex-col items-center gap-3"
-                style={{ background: 'var(--bg-primary, #0f1117)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <div className="rounded-2xl p-4 flex flex-col items-center gap-3 bg-red-500/5 border border-red-500/10 backdrop-blur-sm shadow-sm">
                 <BodyFigure selected={t.injuredLimbs ?? []} size="md" />
                 {/* Injury description */}
                 {t.injuryDescription && (
-                  <div className="w-full rounded-xl p-3 text-sm"
-                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-                    <p className="font-semibold mb-1 flex items-center gap-1.5">
-                      <AlertTriangle size={13} /> Description
+                  <div className="w-full rounded-2xl p-4 text-sm bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-300">
+                    <p className="font-bold mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                      <AlertTriangle size={13} className="text-red-500" /> Injury Details
                     </p>
-                    <p className="text-xs leading-relaxed" style={{ color: '#fda4af' }}>{t.injuryDescription}</p>
+                    <p className="text-xs leading-relaxed opacity-90">{t.injuryDescription}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="rounded-xl p-4 text-center text-sm text-text-secondary"
-                style={{ background: 'var(--bg-primary, #0f1117)', border: '1px dashed var(--border-color)' }}>
-                ✅ No injuries or pain points reported
+              <div className="rounded-2xl p-5 text-center text-sm text-text-secondary bg-emerald-500/5 border border-emerald-500/15 flex items-center justify-center gap-2 font-medium shadow-inner">
+                <Check size={16} className="text-emerald-500" />
+                No injuries or pain points reported
               </div>
             )}
           </div>
 
           {/* Medical Conditions */}
           {hasConditions && (
-            <div>
-              <h4 className="text-sm font-bold text-text-primary mb-2 flex items-center gap-2">
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
                 <Heart size={14} className="text-pink-400" /> Medical Conditions
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {t.medicalConditions!.filter(c => c !== 'None').map(c => (
-                  <span key={c} className="text-xs px-2.5 py-0.5 rounded-full font-medium"
-                    style={{ background: 'rgba(236,72,153,0.12)', color: '#f9a8d4', border: '1px solid rgba(236,72,153,0.25)' }}>
+                  <span key={c} className="text-xs px-3 py-1 rounded-xl font-bold bg-red-400/10 text-red-500 dark:text-red-300 border border-red-400/20 shadow-sm">
                     {c}
                   </span>
                 ))}
@@ -214,14 +219,13 @@ function ProfileDrawer({ client, onClose, onAccept, onReject, onMessage }: {
 
           {/* Accessibility Needs */}
           {(t.accessibilityNeeds?.filter(a => a !== 'None').length ?? 0) > 0 && (
-            <div>
-              <h4 className="text-sm font-bold text-text-primary mb-2 flex items-center gap-2">
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
                 <Globe2 size={14} className="text-blue-400" /> Accessibility Needs
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {t.accessibilityNeeds!.filter(a => a !== 'None').map(a => (
-                  <span key={a} className="text-xs px-2.5 py-0.5 rounded-full font-medium"
-                    style={{ background: 'rgba(96,165,250,0.12)', color: '#93c5fd', border: '1px solid rgba(96,165,250,0.25)' }}>
+                  <span key={a} className="text-xs px-3 py-1 rounded-xl font-bold bg-blue-400/10 text-blue-500 dark:text-blue-300 border border-blue-400/20 shadow-sm">
                     {a}
                   </span>
                 ))}
@@ -231,35 +235,35 @@ function ProfileDrawer({ client, onClose, onAccept, onReject, onMessage }: {
 
           {/* Motivation */}
           {t.trainingMotivation && (
-            <div>
-              <h4 className="text-sm font-bold text-text-primary mb-2 flex items-center gap-2">
-                <Zap size={14} className="text-yellow-400" /> Their Motivation
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
+                <Zap size={14} className="text-yellow-500" /> Client Motivation
               </h4>
-              <blockquote className="rounded-xl p-4 text-sm italic leading-relaxed"
-                style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', color: '#fde68a' }}>
+              <blockquote className="rounded-2xl p-4 text-xs italic leading-relaxed bg-yellow-500/5 border border-yellow-500/10 text-yellow-600 dark:text-yellow-300 font-medium">
                 "{t.trainingMotivation}"
               </blockquote>
             </div>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className="pt-2 space-y-2">
-            {client.status === 'pending' && (
-              <div className="flex gap-2">
-                <Button fullWidth onClick={() => onAccept(client.id)} leftIcon={<Check size={15} />}>
-                  Accept Client
-                </Button>
-                <Button fullWidth variant="ghost" onClick={() => onReject(client.id)} leftIcon={<X size={15} />}>
-                  Decline
-                </Button>
-              </div>
-            )}
-            {client.status === 'accepted' && (
-              <Button fullWidth variant="secondary" onClick={() => onMessage(t.id)} leftIcon={<MessageCircle size={15} />}>
-                Open Chat
+        {/* Sticky Actions Footer */}
+        <div className="sticky bottom-0 z-10 p-5 border-t border-border-color/30 backdrop-blur-md flex flex-col gap-2 mt-auto"
+          style={{ background: 'var(--glass-bg-heavy)' }}>
+          {client.status === 'pending' && (
+            <div className="flex gap-2.5">
+              <Button fullWidth onClick={() => onAccept(client.id)} leftIcon={<Check size={16} />} className="!rounded-2xl !py-3 font-black tracking-wide uppercase text-xs">
+                Accept Request
               </Button>
-            )}
-          </div>
+              <Button fullWidth variant="ghost" onClick={() => onReject(client.id)} leftIcon={<X size={16} />} className="!rounded-2xl !py-3 font-black tracking-wide uppercase text-xs border border-border-color/30">
+                Decline
+              </Button>
+            </div>
+          )}
+          {client.status === 'accepted' && (
+            <Button fullWidth variant="secondary" onClick={() => onMessage(t.id)} leftIcon={<MessageCircle size={16} />} className="!rounded-2xl !py-3 font-black tracking-wide uppercase text-xs shadow-md">
+              Open Chat
+            </Button>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -308,40 +312,53 @@ export default function TrainerClients() {
 
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex items-center justify-between p-4 bg-bg-primary rounded-xl cursor-pointer hover:bg-white/[0.03] transition-all group"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between p-4 rounded-2xl cursor-pointer bg-bg-card hover:bg-bg-card-hover border border-border-color/20 hover:border-accent-purple/30 transition-all duration-300 group shadow-sm hover:shadow-md"
         onClick={() => setSelectedClient(r)}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="relative">
-            <Avatar src={t.avatar} name={t.name} size="md" />
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="relative flex-shrink-0">
+            <Avatar src={t.avatar} name={t.name} size="md" className="rounded-full shadow-sm" />
             {hasInjuries && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center shadow-md animate-pulse"
                 title="Has injuries">
                 <AlertTriangle size={9} className="text-white" />
               </div>
             )}
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-text-primary">{t.name}</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-xs text-text-secondary capitalize">{t.fitnessLevel || 'Unknown level'}</p>
-              {t.age && <span className="text-xs text-text-secondary/60">• {t.age} yrs</span>}
+            <p className="font-black text-text-primary tracking-tight text-sm group-hover:text-accent-purple transition-colors">{t.name}</p>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-accent-purple/10 text-accent-purple border border-accent-purple/10">
+                {t.fitnessLevel || 'Unknown'}
+              </span>
+              {t.age && <span className="text-[10px] text-text-secondary font-bold">• {t.age} yrs</span>}
               {hasConditions && (
-                <span className="text-xs px-1.5 py-0.5 rounded-md font-medium"
-                  style={{ background: 'rgba(236,72,153,0.12)', color: '#f9a8d4' }}>
+                <span className="text-[10px] px-2 py-0.5 rounded-md font-black uppercase tracking-wider bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/10">
                   ⚕️ Conditions
                 </span>
               )}
             </div>
-            <div className="flex gap-1 mt-1">
-              {t.goals?.slice(0, 2).map((g: string) => <Badge key={g} variant="purple" size="sm">{g}</Badge>)}
-              {(t.goals?.length ?? 0) > 2 && <Badge variant="purple" size="sm">+{t.goals!.length - 2}</Badge>}
-            </div>
+            {t.goals && t.goals.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {t.goals.slice(0, 2).map((g: string) => (
+                  <span key={g} className="text-[9px] px-2 py-0.5 rounded-md font-bold bg-text-secondary/5 text-text-secondary border border-border-color/10 capitalize">
+                    {g}
+                  </span>
+                ))}
+                {t.goals.length > 2 && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold bg-accent-teal/10 text-accent-teal border border-accent-teal/10">
+                    +{t.goals.length - 2} more
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
-        <ChevronRight size={16} className="text-text-secondary shrink-0 group-hover:text-accent-purple transition-colors" />
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-text-primary/5 group-hover:bg-accent-purple/10 group-hover:text-accent-purple text-text-secondary transition-all duration-300">
+          <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+        </div>
       </motion.div>
     )
   }
@@ -356,26 +373,30 @@ export default function TrainerClients() {
         </motion.div>
 
         {pending.length > 0 && (
-          <Card>
-            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-              Pending Requests <Badge variant="orange">{pending.length}</Badge>
+          <div className="mb-8">
+            <h2 className="text-lg font-black text-text-primary mb-4 flex items-center gap-3">
+              Pending Requests 
+              <span className="bg-accent-orange/10 text-accent-orange px-2.5 py-0.5 rounded-md text-sm">{pending.length}</span>
             </h2>
-            <div className="space-y-3">
+            <div className="grid gap-3">
               {pending.map(r => <ClientCard key={r.id} r={r} />)}
             </div>
-          </Card>
+          </div>
         )}
 
-        <Card>
-          <h2 className="font-bold text-text-primary mb-4">Active Clients ({accepted.length})</h2>
+        <div>
+          <h2 className="text-lg font-black text-text-primary mb-4 flex items-center gap-3">
+            Active Clients
+            <span className="bg-text-secondary/10 text-text-secondary px-2.5 py-0.5 rounded-md text-sm">{accepted.length}</span>
+          </h2>
           {accepted.length === 0 ? (
             <p className="text-sm text-text-secondary text-center py-6">No active clients yet. New requests will appear here.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3">
               {accepted.map(r => <ClientCard key={r.id} r={r} />)}
             </div>
           )}
-        </Card>
+        </div>
       </div>
 
       {/* Profile Drawer */}

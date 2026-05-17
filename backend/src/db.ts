@@ -431,4 +431,11 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_strength_history_user ON strength_history(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_bounties_user ON user_bounties(user_id);
   `);
+
+  try {
+    await pool.query('ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_type_check;');
+    await pool.query("ALTER TABLE messages ADD CONSTRAINT messages_type_check CHECK(type IN ('text','image','file','voice','program','session_proposal'));");
+  } catch (err) {
+    console.warn('Could not alter messages type check (might already be applied or missing):', err);
+  }
 }

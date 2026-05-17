@@ -430,10 +430,22 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
     return musicUrl
   }, [musicUrl])
 
-  // Lock body scroll when on the Solo Trainer to ensure a fixed app-like layout
+  // Lock body scroll when on the Solo Trainer to ensure a fixed app-like layout only if screen height/width are sufficient
   useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = 'unset' }
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && window.innerHeight >= 800) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = 'unset'
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      document.body.style.overflow = 'unset'
+    }
   }, [])
 
   // ══════════════════════
@@ -443,7 +455,7 @@ Please give me a brief, motivational post-workout analysis with recovery tips an
     <>
       <Helmet><title>Solo Trainer — AbiliFit</title></Helmet>
 
-      <div className="h-[calc(100vh-90px)] overflow-hidden bg-bg-primary text-text-primary -mt-2 md:-mt-4">
+      <div className="min-h-[calc(100vh-90px)] lg:h-[calc(100vh-90px)] overflow-y-auto lg:overflow-y-auto bg-bg-primary text-text-primary -mt-2 md:-mt-4">
         <AnimatePresence mode="wait">
 
           {/* ═══════════════════════════════════ */}

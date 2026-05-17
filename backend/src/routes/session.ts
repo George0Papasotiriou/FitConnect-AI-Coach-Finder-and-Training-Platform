@@ -55,6 +55,17 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     const { trainerId, traineeId, type, scheduledAt, notes } = req.body;
     const id = uuid();
     await db.run('INSERT INTO sessions (id, trainer_id, trainee_id, type, scheduled_at, notes) VALUES (?, ?, ?, ?, ?, ?)', id, trainerId, traineeId, type || 'video', scheduledAt, notes || null);
+
+    // Create meeting reminders based on session type
+    const isOnline = type === 'video' || type === 'audio';
+    const title = isOnline ? 'Online Session Reminder' : 'In-Person Session Reminder';
+    const message = isOnline 
+      ? 'You have an online session scheduled. Be ready on the platform.' 
+      : 'IN-PERSON MEETING: Please plan your travel time accordingly to arrive early and on time.';
+    
+    await createNotification(trainerId, 'session', title, message, '/trainer/sessions');
+    await createNotification(traineeId, 'session', title, message, '/trainee/sessions');
+
     res.json({ id });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

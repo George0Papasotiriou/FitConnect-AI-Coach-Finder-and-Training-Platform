@@ -16,9 +16,12 @@ import Badge from '../../components/common/Badge'
 import Button from '../../components/common/Button'
 import { useNavigate } from 'react-router-dom'
 
+import ArrangeSessionModal from '../../components/trainer/ArrangeSessionModal'
+
 export default function TrainerSessions() {
   const navigate = useNavigate()
   const [sessions, setSessions] = useState<any[]>([])
+  const [isArrangeModalOpen, setIsArrangeModalOpen] = useState(false)
 
   useEffect(() => { trainerApi.getSessions().then(setSessions).catch(() => {}) }, [])
 
@@ -36,9 +39,12 @@ export default function TrainerSessions() {
     <>
       <Helmet><title>Sessions — AbiliFit</title></Helmet>
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
           <h1 className="text-2xl font-black text-text-primary">My <span className="gradient-text">Sessions</span></h1>
+          <Button onClick={() => setIsArrangeModalOpen(true)} leftIcon={<Clock size={16} />}>Arrange Session</Button>
         </motion.div>
+
+        <ArrangeSessionModal isOpen={isArrangeModalOpen} onClose={() => setIsArrangeModalOpen(false)} />
 
         {upcoming.length > 0 && (
           <Card>

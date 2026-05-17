@@ -44,6 +44,16 @@ export default function Chat() {
     navigate(`/chat/${id}`, { replace: true })
   }
 
+  const getPreviewText = (msg: any) => {
+    if (!msg) return 'No messages yet'
+    if (msg.type === 'session_proposal') return '📅 Session Proposal'
+    if (msg.type === 'program') return '📄 Training Program'
+    if (msg.type === 'image') return '🖼️ Image'
+    if (msg.type === 'file') return '📎 File Attachment'
+    if (msg.type === 'voice') return '🎤 Voice Message'
+    return msg.content
+  }
+
   return (
     <>
       <Helmet><title>Chat — AbiliFit</title></Helmet>
@@ -107,7 +117,7 @@ export default function Chat() {
                       <div className="flex items-center justify-between mt-0.5">
                         <p className="text-xs text-text-secondary truncate flex-1">
                           {conv.lastMessage?.senderId === user?.id && <span className="opacity-50">You: </span>}
-                          {conv.lastMessage?.content || 'No messages yet'}
+                          {getPreviewText(conv.lastMessage)}
                         </p>
                         {conv.lastMessage?.senderId === user?.id && conv.lastMessage?.readAt && (
                           <span className="text-[10px] text-accent-teal font-bold ml-2">Seen</span>

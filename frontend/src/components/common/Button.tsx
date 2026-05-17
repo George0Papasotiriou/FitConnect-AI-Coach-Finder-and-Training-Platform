@@ -30,7 +30,7 @@ const variantClasses = {
   secondary: `
     bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] text-accent-purple
     shadow-[inset_0_1px_0_0_var(--glass-inner-highlight),0_1px_3px_0_var(--glass-shadow)]
-    hover:bg-[var(--glass-bg-heavy)] hover:border-accent-purple/30 hover:text-accent-teal
+    hover:bg-[var(--glass-bg-heavy)] hover:border-emerald-500/30 hover:text-accent-teal
     hover:shadow-[inset_0_1px_0_0_var(--glass-inner-highlight),0_2px_8px_0_var(--glass-shadow),0_8px_24px_-4px_var(--glass-shadow-heavy)]
   `,
   ghost: `
@@ -45,7 +45,7 @@ const variantClasses = {
     hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_2px_8px_0_rgba(239,68,68,0.3),0_8px_28px_-4px_rgba(239,68,68,0.35)]
   `,
   teal: `
-    bg-gradient-to-br from-accent-teal/90 to-emerald-600/90 text-white border border-accent-teal/30
+    bg-gradient-to-br from-emerald-600/90 to-emerald-700/90 text-white border border-emerald-600/30
     backdrop-blur-lg font-bold
     shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_1px_3px_0_rgba(5,150,105,0.2),0_4px_16px_-2px_rgba(5,150,105,0.25)]
     hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_2px_8px_0_rgba(5,150,105,0.3),0_8px_28px_-4px_rgba(5,150,105,0.35)]

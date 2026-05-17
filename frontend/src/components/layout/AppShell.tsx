@@ -45,7 +45,7 @@ export default function AppShell() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 transition-all duration-300 pt-16 md:pt-20 pb-[calc(env(safe-area-inset-bottom,24px)+80px)] lg:pb-4 min-h-screen relative z-10"
+        className="flex-1 transition-all duration-300 pt-16 md:pt-20 pb-[calc(env(safe-area-inset-bottom,24px)+80px)] lg:pb-4 min-h-screen relative"
         style={{ marginLeft: isMobile ? 0 : sidebarWidth }}
       >
         <div className="p-4 md:p-6 max-w-7xl mx-auto h-full">

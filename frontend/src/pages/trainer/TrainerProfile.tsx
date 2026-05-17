@@ -90,7 +90,7 @@ export default function TrainerProfile() {
             <Input label="Full Name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1.5">Bio</label>
-              <textarea value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} rows={4} className="input-field resize-none" />
+              <textarea value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} rows={4} className="input-field w-full resize-none" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Input label="Experience (years)" type="number" value={form.experience} onChange={e => setForm(p => ({ ...p, experience: parseInt(e.target.value) || 0 }))} />

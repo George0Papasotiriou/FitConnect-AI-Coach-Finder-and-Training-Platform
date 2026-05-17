@@ -16,6 +16,7 @@ import { useChatStore } from '../../store/chatStore'
 import { aiApi } from '../../api/ai'
 import Avatar from '../common/Avatar'
 import ProgramMessage from './ProgramMessage'
+import SessionProposalMessage from './SessionProposalMessage'
 
 interface MessageBubbleProps {
   message: Message
@@ -258,10 +259,6 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         <Avatar src={message.senderAvatar} name={message.senderName} size="xs" />
       )}
       <div className={`max-w-[70%] space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col relative`}>
-        {!isOwn && (
-          <span className="text-xs text-text-secondary px-1">{message.senderName}</span>
-        )}
-        
         {isOwn && (
           <button
             onClick={handleDelete}
@@ -281,6 +278,8 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         >
           {message.type === 'program' ? (
             <ProgramMessage content={message.content} />
+          ) : message.type === 'session_proposal' ? (
+            <SessionProposalMessage message={message} isOwn={isOwn} />
           ) : isFile ? (
             <FileAttachment message={message} isOwn={isOwn} />
           ) : (
@@ -292,7 +291,12 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             <LinkPreviewCard key={url} url={url} isOwn={isOwn} />
           ))}
         </div>
-        <div className={`flex items-center gap-1 px-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`flex items-center gap-1.5 px-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+          {!isOwn && (
+            <span className="text-[10px] text-text-secondary font-medium">
+              {message.senderName} •
+            </span>
+          )}
           <span className="text-[10px] text-text-secondary">
             {time}
           </span>

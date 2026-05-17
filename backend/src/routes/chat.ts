@@ -119,6 +119,23 @@ router.post('/conversations/:id/files', authenticate, uploadChatFile.single('fil
   }
 });
 
+router.put('/conversations/:id/messages/:messageId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ message: 'Content required' });
+    
+    // Allow updating message content if the user is in the conversation
+    const isParticipant = await db.get('SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?', req.params.id, req.user!.id);
+    if (!isParticipant) return res.status(403).json({ message: 'Not authorized' });
+
+    await db.run('UPDATE messages SET content = ? WHERE id = ? AND conversation_id = ?', content, req.params.messageId, req.params.id);
+    res.json({ message: 'Message updated successfully' });
+  } catch (err) {
+    console.error('Update message error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.post('/conversations/:id/close', authenticate, async (req: AuthRequest, res) => {
   try {
     await db.run('UPDATE conversation_participants SET is_closed = TRUE WHERE conversation_id = ? AND user_id = ?', req.params.id, req.user!.id);

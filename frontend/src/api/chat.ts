@@ -15,7 +15,7 @@ export interface Message {
   senderName: string
   senderAvatar?: string
   content: string
-  type: 'text' | 'image' | 'file' | 'voice' | 'program'
+  type: 'text' | 'image' | 'file' | 'voice' | 'program' | 'session_proposal'
   fileUrl?: string
   createdAt: string
   readAt?: string
@@ -44,6 +44,9 @@ export const chatApi = {
 
   sendMessage: (conversationId: string, content: string, type = 'text') =>
     apiClient.post<Message>(`/chat/conversations/${conversationId}/messages`, { content, type }).then(r => r.data),
+
+  updateMessage: (conversationId: string, messageId: string, content: string) =>
+    apiClient.put(`/chat/conversations/${conversationId}/messages/${messageId}`, { content }).then(r => r.data),
 
   sendFile: (conversationId: string, file: File) => {
     const formData = new FormData()

@@ -22,11 +22,28 @@ export function AnatomyFront({ getColor, setHoveredMuscle, hoveredMuscle, onMusc
   const [localHover, setLocalHover] = useState<MuscleGroup | null>(null);
   const activeHover = hoveredMuscle ?? localHover;
 
+  const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
   const p = (group: MuscleGroup, d: string) => {
     const isActive = activeHover === group || selectedMuscle === group;
     const color = getColor(group);
     const isHighlighted = color !== 'rgba(100,100,120,0.06)';
     const glowColor = color === 'var(--accent-purple)' ? 'rgba(16,185,129,0.6)' : 'rgba(16,185,129,0.3)';
+
+    const handleMuscleClick = () => {
+      if (!isHighlighted) return;
+      if (isTouch) {
+        if (activeHover === group) {
+          setLocalHover(null);
+          setHoveredMuscle?.(null);
+        } else {
+          setLocalHover(group);
+          setHoveredMuscle?.(group);
+        }
+      }
+      onMuscleClick?.(group);
+    };
+
     return (
       <path 
         fill={color} 
@@ -42,9 +59,9 @@ export function AnatomyFront({ getColor, setHoveredMuscle, hoveredMuscle, onMusc
           transformOrigin: 'center',
           filter: isActive && isHighlighted ? `drop-shadow(0 0 4px ${glowColor})` : 'none',
         }}
-        onMouseEnter={() => { if (isHighlighted) { setLocalHover(group); setHoveredMuscle?.(group); } }}
-        onMouseLeave={() => { setLocalHover(null); setHoveredMuscle?.(null); }}
-        onClick={() => isHighlighted && onMuscleClick?.(group)}
+        onMouseEnter={() => { if (!isTouch && isHighlighted) { setLocalHover(group); setHoveredMuscle?.(group); } }}
+        onMouseLeave={() => { if (!isTouch) { setLocalHover(null); setHoveredMuscle?.(null); } }}
+        onClick={handleMuscleClick}
         d={d}
         transform="translate(-1.25 -2.47)"
       />
@@ -91,11 +108,28 @@ export function AnatomyBack({ getColor, setHoveredMuscle, hoveredMuscle, onMuscl
   const [localHover, setLocalHover] = useState<MuscleGroup | null>(null);
   const activeHover = hoveredMuscle ?? localHover;
 
+  const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
   const p = (group: MuscleGroup, d: string) => {
     const isActive = activeHover === group || selectedMuscle === group;
     const color = getColor(group);
     const isHighlighted = color !== 'rgba(100,100,120,0.06)';
     const glowColor = color === 'var(--accent-purple)' ? 'rgba(16,185,129,0.6)' : 'rgba(16,185,129,0.3)';
+
+    const handleMuscleClick = () => {
+      if (!isHighlighted) return;
+      if (isTouch) {
+        if (activeHover === group) {
+          setLocalHover(null);
+          setHoveredMuscle?.(null);
+        } else {
+          setLocalHover(group);
+          setHoveredMuscle?.(group);
+        }
+      }
+      onMuscleClick?.(group);
+    };
+
     return (
       <path 
         fill={color} 
@@ -111,9 +145,9 @@ export function AnatomyBack({ getColor, setHoveredMuscle, hoveredMuscle, onMuscl
           transformOrigin: 'center',
           filter: isActive && isHighlighted ? `drop-shadow(0 0 4px ${glowColor})` : 'none',
         }}
-        onMouseEnter={() => { if (isHighlighted) { setLocalHover(group); setHoveredMuscle?.(group); } }}
-        onMouseLeave={() => { setLocalHover(null); setHoveredMuscle?.(null); }}
-        onClick={() => isHighlighted && onMuscleClick?.(group)}
+        onMouseEnter={() => { if (!isTouch && isHighlighted) { setLocalHover(group); setHoveredMuscle?.(group); } }}
+        onMouseLeave={() => { if (!isTouch) { setLocalHover(null); setHoveredMuscle?.(null); } }}
+        onClick={handleMuscleClick}
         d={d}
         transform="translate(-1.25 -2.47)"
       />
