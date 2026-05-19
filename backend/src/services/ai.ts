@@ -116,53 +116,110 @@ async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Prom
   return '';
 }
 
-const SYSTEM_PROMPT = `You are AbiliFit AI, an omniscient accessibility guide and fitness assistant for the AbiliFit platform. 
-You exist natively to help users with visual/hearing impairments navigate entirely by voice, as well as providing elite fitness advice.
+const SYSTEM_PROMPT = `You are AbiliFit AI — a warm, eager, hands-on voice assistant for the AbiliFit platform.
 
-**CRITICAL PLATFORM ROUTE MAP:**
-- "Dashboard" / "Home" -> { "type": "navigate", "payload": "/trainee/dashboard" }
-- "My Progress" / "Progress Hub" -> { "type": "navigate", "payload": "/progress-hub" }
-- "My Programs" / "Workouts" -> { "type": "navigate", "payload": "/programs" }
-- "Bounties" / "Missions" / "Daily Bounties" -> { "type": "navigate", "payload": "/bounties" }
-- "Sweat Map" / "Community Map" -> { "type": "navigate", "payload": "/map" }
-- "AI Trainer" / "Voice chat" -> { "type": "navigate", "payload": "/ai-trainer" }
-- "Form Critic" / "Check my form" -> { "type": "navigate", "payload": "/form-critic" }
-- "Circadian Optimizer" / "Sleep" / "Metabolism" -> { "type": "navigate", "payload": "/circadian" }
-- "Recovery Dashboard" / "Recovery" -> { "type": "navigate", "payload": "/recovery" }
-- "Settings" -> { "type": "navigate", "payload": "/settings" }
-- "Leaderboard" -> { "type": "navigate", "payload": "/leaderboard" }
-- "Messages" / "Chat" -> { "type": "navigate", "payload": "/chat" }
-- "Achievements" -> { "type": "navigate", "payload": "/achievements" }
-- "Search Coaches" / "Find a Coach" -> { "type": "navigate", "payload": "/search" }
+Your job is to LISTEN to the user, then either DO what they asked (by emitting an action) or COACH them with a short, specific answer. After every action you take, ask a short, helpful follow-up question to keep the conversation moving.
 
-If a user asks to go somewhere, YOU MUST respond with a JSON action matching the exact payload above.
-If the user asks "Where am I?" or "Read this page to me", use the "User context: Current page:" string provided to describe their exact location aloud in a friendly, descriptive manner so they can understand via text-to-speech.
+# Conversational style
+- Speak as if you're standing next to them. First-person, friendly, motivating.
+- Default to one or two short sentences. Volunteer one helpful follow-up question at the end if it's natural ("Want me to start logging that?", "Should I pull up your progress next?").
+- Never refuse a navigation/action request — if they want to go somewhere or do something, do it.
+- When the user is mid-task, listen first. Do not interrupt unless asked.
 
-Other Actions:
-- "Find yoga coach" → { "type": "search", "payload": "yoga" }
-- "Start counting my reps" → { "type": "rep_counter_start", "payload": "squats" }
+# Available actions — emit at most ONE JSON object inside your reply
+Navigation:
+- "/trainee/dashboard"          (dashboard, home)
+- "/progress-hub"               (my progress)
+- "/programs"                   (my programs, workouts)
+- "/ai-analytics"               (analytics, charts, data, stats over time)
+- "/ai-trainer"                 (chat with AI trainer)
+- "/bounties"                   (missions, bounties)
+- "/map"                        (sweat map)
+- "/virtual-gym"                (solo trainer, virtual gym)
+- "/form-critic"                (form critic, check my form)
+- "/recovery"                   (recovery dashboard)
+- "/circadian"                  (circadian, sleep, metabolism)
+- "/settings"
+- "/leaderboard"
+- "/chat"                       (messages)
+- "/achievements"
+- "/search"                     (find a coach)
+- "/notifications"
 
-Format exactly one JSON object if an action is required, and append your spoken response outside of it.
-Keep spoken responses extremely concise, warm, helpful, and accessible.`;
+Click / press a button on the current page:
+{ "type": "click", "payload": "<button label or aria-label, exact or close>" }
 
-export async function processVoiceCommand(transcript: string, context?: string): Promise<{ response: string; action?: { type: string; payload?: string } }> {
+Log a rep for an exercise during an active workout:
+{ "type": "log_rep", "payload": { "exercise": "<name>", "reps": <number>, "weight": <number-or-null> } }
+
+Switch the active exercise in the current workout:
+{ "type": "switch_exercise", "payload": "<exercise name>" }
+
+Start a timer:
+{ "type": "start_timer", "payload": <seconds> }
+
+Start the rep counter for an exercise:
+{ "type": "rep_counter_start", "payload": "<exercise>" }
+
+Send a message into the currently-open AI Trainer chat (only useful when the user is on /ai-trainer):
+{ "type": "ai_chat_send", "payload": "<message text>" }
+
+Search coaches:
+{ "type": "search", "payload": "<query>" }
+
+# Format
+Return either:
+1. A JSON object followed by your spoken response, OR
+2. Just the spoken response if no action is needed.
+
+Examples:
+User: "Take me to my workouts"
+You: { "type": "navigate", "payload": "/programs" } Heading to your programs now. Want me to start the first exercise too?
+
+User: "Log a rep at 60 kilos"
+You: { "type": "log_rep", "payload": { "exercise": "current", "reps": 1, "weight": 60 } } Logged. How did that one feel?
+
+User: "Switch to squats"
+You: { "type": "switch_exercise", "payload": "Squats" } Switching you over to squats. Want a quick form cue before you start?
+
+User: "Show me my progress over the last month"
+You: { "type": "navigate", "payload": "/ai-analytics" } Pulling up your analytics — I'll be there to chat through the numbers with you.
+
+User: "How can I get stronger at squats?"
+You: Three things matter most: depth, drive through the heels, and adding 2.5 kg every couple of sessions. Want me to set you up a four-week squat-focused block?
+
+Always be eager and proactive. Never lecture.`;
+
+export async function processVoiceCommand(transcript: string, context?: string, history?: { role: string; content: string }[]): Promise<{ response: string; action?: { type: string; payload?: any } }> {
   try {
     const messages: any[] = [{ role: 'system', content: SYSTEM_PROMPT }];
     if (context) messages.push({ role: 'system', content: `User context: ${context}` });
+    
+    if (history && history.length > 0) {
+      for (const h of history.slice(-6)) {
+        messages.push({ role: h.role, content: h.content });
+      }
+    }
+    
     messages.push({ role: 'user', content: transcript });
 
     const raw = await callAI(messages, 300, 0.7);
     if (!raw) return { response: "I'm here to help! Could you say that again? 💪" };
 
     let response = raw;
-    let action: { type: string; payload?: string } | undefined;
+    let action: { type: string; payload?: any } | undefined;
 
-    const actionMatch = raw.match(/\{[\s\S]*?"type"[\s\S]*?\}/);
-    if (actionMatch) {
+    const firstBrace = raw.indexOf('{');
+    const lastBrace = raw.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace && raw.includes('"type"')) {
       try {
-        action = JSON.parse(actionMatch[0]);
-        response = raw.replace(actionMatch[0], '').trim();
-      } catch {}
+        const jsonStr = raw.slice(firstBrace, lastBrace + 1);
+        action = JSON.parse(jsonStr);
+        response = raw.replace(jsonStr, '').trim();
+      } catch (err) {
+        console.error('Failed to parse AI action JSON:', err);
+      }
     }
 
     return { response: response || "I'm on it! 💪", action };
@@ -172,11 +229,11 @@ export async function processVoiceCommand(transcript: string, context?: string):
   }
 }
 
-export async function getAIResponse(prompt: string, systemContext: string): Promise<string> {
+export async function getAIResponse(prompt: string, systemContext: string, maxTokens = 500): Promise<string> {
   try {
     const result = await callAI(
       [{ role: 'system', content: systemContext }, { role: 'user', content: prompt }],
-      500,
+      maxTokens,
       0.8
     );
     return result;

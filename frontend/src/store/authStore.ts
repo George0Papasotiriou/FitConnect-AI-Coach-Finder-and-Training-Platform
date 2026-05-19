@@ -27,6 +27,7 @@ interface AuthStore {
   token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: (credential: string) => Promise<void>
   logout: () => void
   setUser: (user: User) => void
   setToken: (token: string) => void
@@ -54,6 +55,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true })
     try {
       const data = await authApi.login({ email, password })
+      set({ user: data.user as User, token: data.token, isLoading: false })
+      localStorage.setItem('auth-storage', JSON.stringify({ user: data.user, token: data.token }))
+    } catch (err) {
+      set({ isLoading: false })
+      throw err
+    }
+  },
+
+  loginWithGoogle: async (credential) => {
+    set({ isLoading: true })
+    try {
+      const data = await authApi.loginWithGoogle(credential)
       set({ user: data.user as User, token: data.token, isLoading: false })
       localStorage.setItem('auth-storage', JSON.stringify({ user: data.user, token: data.token }))
     } catch (err) {

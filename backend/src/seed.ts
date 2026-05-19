@@ -39,6 +39,25 @@ export async function seed() {
   await db.run('INSERT INTO users (id, name, email, password, role, xp, level, onboarding_complete) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     adminId, 'Admin', 'admin@fitconnect.com', adminPassword, 'admin', 0, 1, 1);
 
+  const admin2Id = uuid();
+  await db.run('INSERT INTO users (id, name, email, password, role, xp, level, onboarding_complete) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    admin2Id, 'Admin 2', 'admin2@fitconnect.com', adminPassword, 'admin', 0, 1, 1);
+
+  const adminConvId = uuid();
+  await db.run('INSERT INTO conversations (id) VALUES (?)', adminConvId);
+  await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', adminConvId, adminId);
+  await db.run('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)', adminConvId, admin2Id);
+
+  const adminMessages = [
+    { sender: adminId, content: "Hello Admin 2! Welcome to the administrator chat portal. Here we can sync on platform operations." },
+    { sender: admin2Id, content: "Thanks Admin! I am ready to help monitor sessions, review trainer applications, and manage platform bounties." },
+    { sender: adminId, content: "Fantastic! Let's ensure everything is working seamlessly. 🚀" }
+  ];
+  for (const msg of adminMessages) {
+    await db.run('INSERT INTO messages (id, conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?, ?)',
+      uuid(), adminConvId, msg.sender, msg.content, 'text');
+  }
+
   const trainers = [
     {
       name: 'Elena Vasquez', email: 'elena@fitconnect.com',
@@ -258,7 +277,8 @@ export async function seed() {
 
   console.log('✅ Seed complete!\n');
   console.log('📧 Demo accounts:');
-  console.log('   Admin:      admin@fitconnect.com  / admin123');
+  console.log('   Admin 1:    admin@fitconnect.com  / admin123');
+  console.log('   Admin 2:    admin2@fitconnect.com / admin123');
   console.log('   Trainer:    elena@fitconnect.com  / password123');
   console.log('   Trainer:    marcus@fitconnect.com / password123');
   console.log('   Trainee:    sarah@example.com     / password123');

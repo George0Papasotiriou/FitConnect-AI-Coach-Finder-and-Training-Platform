@@ -7,6 +7,7 @@
  */
 
 import apiClient from './client'
+import type { AnalyticsResponse, EditorialResult, LockedContext } from './analytics'
 
 export interface AdminStats {
   totalUsers: number
@@ -57,5 +58,26 @@ export const adminApi = {
     apiClient.post(`/admin/users/${userId}/ban`, { reason }).then(r => r.data),
 
   unbanUser: (userId: string) =>
-    apiClient.post(`/admin/users/${userId}/unban`).then(r => r.data)
+    apiClient.post(`/admin/users/${userId}/unban`).then(r => r.data),
+
+  queryAnalytics: (question: string, conversationId: string, lockedContext?: LockedContext | null) =>
+    apiClient
+      .post<AnalyticsResponse>('/analytics/query', { question, conversationId, lockedContext })
+      .then(r => r.data),
+
+  analyticsSuggestions: (conversationId: string, lockedContext?: LockedContext | null) =>
+    apiClient
+      .get<{ suggestions: string[] }>('/analytics/suggestions', {
+        params: {
+          conversationId,
+          lockedContext: lockedContext ? JSON.stringify(lockedContext) : undefined,
+        },
+      })
+      .then(r => r.data.suggestions),
+
+  resetAnalyticsConversation: (conversationId: string) =>
+    apiClient.post(`/analytics/conversations/${conversationId}/reset`).then(r => r.data),
+
+  editorial: (conversationId: string) =>
+    apiClient.post<EditorialResult>('/analytics/editorial', { conversationId }).then(r => r.data),
 }

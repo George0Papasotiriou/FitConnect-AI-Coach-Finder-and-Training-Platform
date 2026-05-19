@@ -246,7 +246,7 @@ export default function TraineeOnboarding() {
               id="injury-desc"
               rows={4}
               placeholder="e.g. Missing right arm below elbow, chronic lower back pain, recovering from ACL surgery..."
-              className="input-field resize-none w-full"
+              className="glass-input resize-none w-full p-4 rounded-xl text-text-primary placeholder:text-text-secondary/50 focus:outline-none"
               value={data.injuryDescription}
               onChange={e => setData(p => ({ ...p, injuryDescription: e.target.value }))}
             />
@@ -267,7 +267,7 @@ export default function TraineeOnboarding() {
             id="motivation"
             rows={5}
             placeholder="e.g. I want to be fit enough to play with my kids without getting tired. I've struggled with my weight for years and this time I'm committed to change..."
-            className="input-field resize-none w-full"
+            className="glass-input resize-none w-full p-4 rounded-xl text-text-primary placeholder:text-text-secondary/50 focus:outline-none"
             value={data.trainingMotivation}
             onChange={e => setData(p => ({ ...p, trainingMotivation: e.target.value }))}
           />

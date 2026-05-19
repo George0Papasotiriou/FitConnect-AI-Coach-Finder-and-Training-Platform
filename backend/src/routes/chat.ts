@@ -76,6 +76,15 @@ router.delete('/conversations/:id/messages/:messageId', authenticate, async (req
     if (msg.senderId !== req.user!.id) return res.status(403).json({ message: 'Not authorized to delete' });
 
     await db.run('DELETE FROM messages WHERE id = ?', req.params.messageId);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conv:${req.params.id}`).emit('message_deleted', {
+        conversationId: req.params.id,
+        messageId: req.params.messageId
+      });
+    }
+
     res.json({ message: 'Message deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -93,6 +102,12 @@ router.post('/conversations/:id/messages', authenticate, async (req: AuthRequest
     await db.run('UPDATE conversation_participants SET is_closed = FALSE WHERE conversation_id = ?', req.params.id);
 
     const message = await db.get('SELECT m.*, u.name as sender_name, u.avatar as sender_avatar FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', id);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conv:${req.params.id}`).emit('new_message', message);
+    }
+
     res.json(message);
   } catch (err) {
     console.error('Send message error:', err);
@@ -113,6 +128,12 @@ router.post('/conversations/:id/files', authenticate, uploadChatFile.single('fil
     await db.run('UPDATE conversation_participants SET is_closed = FALSE WHERE conversation_id = ?', req.params.id);
 
     const message = await db.get('SELECT m.*, u.name as sender_name, u.avatar as sender_avatar FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', id);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conv:${req.params.id}`).emit('new_message', message);
+    }
+
     res.json(message);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -129,6 +150,16 @@ router.put('/conversations/:id/messages/:messageId', authenticate, async (req: A
     if (!isParticipant) return res.status(403).json({ message: 'Not authorized' });
 
     await db.run('UPDATE messages SET content = ? WHERE id = ? AND conversation_id = ?', content, req.params.messageId, req.params.id);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conv:${req.params.id}`).emit('message_updated', {
+        conversationId: req.params.id,
+        messageId: req.params.messageId,
+        content
+      });
+    }
+
     res.json({ message: 'Message updated successfully' });
   } catch (err) {
     console.error('Update message error:', err);

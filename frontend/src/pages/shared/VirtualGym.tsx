@@ -38,6 +38,7 @@ import { useWorkoutStore, CATEGORY_TO_MUSCLES, type WorkoutExerciseLog } from '.
 import { aiApi } from '../../api/ai'
 import { exerciseApi } from '../../api/exercise'
 import { format } from 'date-fns'
+import { subscribeVoiceAction } from '../../lib/voiceActionBus'
 
 // ── Types ──
 type HubView = 'HUB' | 'BESTIARY' | 'EXERCISE_DETAIL'
@@ -303,6 +304,75 @@ export default function SoloTrainingHub() {
   useEffect(() => {
     const id = setInterval(() => setHypeLevel(h => Math.max(0, h - 1.5)), 1000)
     return () => clearInterval(id)
+  }, [])
+
+  // ── Voice action bus: respond to log_rep / switch_exercise / start_timer ──
+  // Kept in sync via refs so we don't re-subscribe each render.
+  const selectedExerciseRef = useRef(selectedExercise)
+  const repsRef = useRef(reps)
+  const weightRef = useRef(weight)
+  useEffect(() => { selectedExerciseRef.current = selectedExercise }, [selectedExercise])
+  useEffect(() => { repsRef.current = reps }, [reps])
+  useEffect(() => { weightRef.current = weight }, [weight])
+
+  useEffect(() => {
+    const off = subscribeVoiceAction((action) => {
+      if (action.type === 'log_rep') {
+        const p = action.payload ?? {}
+        // Honour explicit reps/weight; otherwise reuse current.
+        if (typeof p.weight === 'number' && p.weight >= 0) setWeight(p.weight)
+        if (typeof p.reps === 'number' && p.reps > 0) setReps(p.reps)
+        // If the AI named a different exercise, switch first.
+        if (typeof p.exercise === 'string' && p.exercise && p.exercise !== 'current') {
+          const lowered = p.exercise.toLowerCase()
+          const match = EXERCISES.find((e) =>
+            e.name.toLowerCase() === lowered || e.name.toLowerCase().includes(lowered),
+          )
+          if (match) setSelectedExercise(match)
+        }
+        // Defer logSet to after state updates so it picks up new reps/weight.
+        window.setTimeout(() => {
+          const r = (typeof p.reps === 'number' && p.reps > 0) ? p.reps : repsRef.current
+          const w = (typeof p.weight === 'number' && p.weight >= 0) ? p.weight : weightRef.current
+          if (r <= 0 || w <= 0) return
+          // Inline the same body as logSet to avoid re-render race.
+          if (!sessionActive) {
+            setSessionActive(true)
+            setSessionStartTime(new Date())
+            workoutStore.startSession()
+          }
+          const newSet: WorkoutSet = { reps: r, weight: w, timestamp: new Date() }
+          const ex = selectedExerciseRef.current
+          setSessionLogs((prev) => {
+            const existing = prev.find((l) => l.exerciseId === ex.id)
+            if (existing) return prev.map((l) => l.exerciseId === ex.id ? { ...l, sets: [...l.sets, newSet] } : l)
+            return [...prev, { exerciseId: ex.id, sets: [newSet] }]
+          })
+          setHypeLevel((h) => Math.min(100, h + 18))
+          toast.success(`💪 ${r} × ${w}kg logged (voice)`, { duration: 2000 })
+        }, 50)
+        return
+      }
+      if (action.type === 'switch_exercise' && typeof action.payload === 'string') {
+        const lowered = action.payload.toLowerCase()
+        const match = EXERCISES.find((e) =>
+          e.name.toLowerCase() === lowered || e.name.toLowerCase().includes(lowered),
+        )
+        if (match) {
+          setSelectedExercise(match)
+          toast.info(`Switched to ${match.name}`, { duration: 1800 })
+        } else {
+          toast.error(`Couldn't find an exercise called "${action.payload}"`)
+        }
+        return
+      }
+      if (action.type === 'start_timer' && typeof action.payload === 'number') {
+        const secs = Math.max(5, Math.min(3600, Math.round(action.payload)))
+        startTimer(secs)
+      }
+    })
+    return off
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Log Set ──

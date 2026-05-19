@@ -223,6 +223,12 @@ router.post('/:id/share', authenticate, async (req: AuthRequest, res) => {
       msgId, conversation.id, req.user!.id, JSON.stringify({ programId: program.id, name: program.name }), 'program');
     await db.run('UPDATE conversations SET updated_at = NOW() WHERE id = ?', conversation.id);
 
+    const message = await db.get('SELECT m.*, u.name as sender_name, u.avatar as sender_avatar FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?', msgId);
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conv:${conversation.id}`).emit('new_message', message);
+    }
+
     // Notify recipient
     await createNotification(recipientId, 'message', '📋 Training Program Shared',
       `${req.user!.name} shared a workout program: ${program.name}`, `/chat/${conversation.id}`);

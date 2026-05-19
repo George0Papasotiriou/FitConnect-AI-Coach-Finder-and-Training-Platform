@@ -10,7 +10,6 @@ import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebRTC } from '../../hooks/useWebRTC'
 import CallControls from './CallControls'
-import PostCallRating from './PostCallRating'
 import AICallAssistant from './AICallAssistant'
 
 interface VideoCallProps {
@@ -30,7 +29,6 @@ function formatDuration(seconds: number) {
 }
 
 export default function VideoCall({ sessionId, isInitiator, trainerName, onClose, isAdhoc, isMinimized, onMinimize }: VideoCallProps) {
-  const [showRating, setShowRating] = useState(false)
   const [isSketchMode, setIsSketchMode] = useState(false)
   const [showAI, setShowAI] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -41,8 +39,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
 
   const handleCallEnded = () => {
-    if (isAdhoc) onClose()
-    else setShowRating(true)
+    onClose()
   }
 
   const {
@@ -134,8 +131,7 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
   }, [isSketchMode, containerSize])
 
   return (
-    <>
-      <motion.div
+    <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className={`${isMinimized ? 'relative w-full h-full' : 'fixed inset-0 z-[100]'} bg-black flex flex-col md:flex-row touch-none`}
@@ -256,13 +252,5 @@ export default function VideoCall({ sessionId, isInitiator, trainerName, onClose
         </AnimatePresence>
         
       </motion.div>
-
-      <PostCallRating
-        isOpen={showRating}
-        sessionId={sessionId}
-        trainerName={trainerName}
-        onClose={() => { setShowRating(false); onClose() }}
-      />
-    </>
   )
 }

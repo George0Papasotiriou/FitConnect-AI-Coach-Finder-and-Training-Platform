@@ -26,6 +26,24 @@
     --glass-inner-highlight: rgba(255, 255, 255, 0.7);
     --glass-blur: 16px;
     --glass-blur-heavy: 24px;
+
+    /* Aperture-compatible glass RGB triplets */
+    --aperture-glass-bg: 255, 255, 255;
+    --aperture-glass-border: 255, 255, 255;
+    --dot-color: oklch(0.78 0.01 270);
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --muted-foreground: #64748b;
+    --muted: oklch(0.96 0.008 270);
+    --border: oklch(0.92 0.005 270);
+    --aurora-1: oklch(0.7 0.18 280);
+    --aurora-2: oklch(0.75 0.14 200);
+    --aurora-3: oklch(0.7 0.16 264);
+    --chart-1: oklch(0.55 0.24 264);
+    --chart-2: oklch(0.7 0.18 200);
+    --chart-3: oklch(0.6 0.27 320);
+    --chart-4: oklch(0.65 0.22 140);
+    --chart-5: oklch(0.7 0.2 60);
   }
 
   .dark {
@@ -50,6 +68,24 @@
     --glass-inner-highlight: rgba(255, 255, 255, 0.04);
     --glass-blur: 20px;
     --glass-blur-heavy: 32px;
+
+    /* Aperture-compatible glass RGB triplets (dark) */
+    --aperture-glass-bg: 15, 23, 42;
+    --aperture-glass-border: 148, 163, 184;
+    --dot-color: oklch(0.35 0.015 270);
+    --card: oklch(0.18 0.018 270);
+    --card-foreground: #f1f5f9;
+    --muted-foreground: oklch(0.62 0.012 270);
+    --muted: oklch(0.22 0.018 270);
+    --border: oklch(0.28 0.018 270);
+    --aurora-1: oklch(0.45 0.09 280);
+    --aurora-2: oklch(0.48 0.08 200);
+    --aurora-3: oklch(0.45 0.09 264);
+    --chart-1: oklch(0.72 0.22 264);
+    --chart-2: oklch(0.78 0.18 200);
+    --chart-3: oklch(0.72 0.25 320);
+    --chart-4: oklch(0.78 0.2 140);
+    --chart-5: oklch(0.82 0.18 60);
   }
 
   * {
@@ -551,3 +587,24 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: #1e293b !important;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* Aperture dot-grid pattern */
+.dot-grid {
+  background-image: radial-gradient(
+    circle,
+    var(--dot-color) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+/* Typing-dot bounce animation for chatbox pending state */
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30%           { opacity: 1;   transform: translateY(-3px); }
+}
+.animate-typing-dot-1 { animation: typing-dot 1.4s infinite ease-in-out; }
+.animate-typing-dot-2 { animation: typing-dot 1.4s infinite ease-in-out 0.2s; }
+.animate-typing-dot-3 { animation: typing-dot 1.4s infinite ease-in-out 0.4s; }
+

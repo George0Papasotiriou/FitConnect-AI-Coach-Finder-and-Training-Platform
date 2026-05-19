@@ -23,7 +23,7 @@ export default function SocketManager() {
   const navigate = useNavigate()
   const { token, user } = useAuthStore()
   const { on, socket } = useSocket()
-  const { addMessage, setTyping, updateConversationLastMessage, incrementUnread, setConversations } = useChatStore()
+  const { addMessage, setTyping, updateConversationLastMessage, incrementUnread, setConversations, updateMessageText } = useChatStore()
   const { addNotification } = useNotificationStore()
   const { setStatus, setMultipleStatuses } = useOnlineStore()
 
@@ -117,6 +117,27 @@ export default function SocketManager() {
       chatApi.getConversations().then((convs: any[]) => setConversations(convs)).catch(() => {})
     }
 
+    const handleMessageUpdated = (data: { conversationId: string; messageId: string; content: string }) => {
+      updateMessageText(data.conversationId, data.messageId, data.content)
+      const conversations = useChatStore.getState().conversations
+      const conversation = conversations.find(c => c.id === data.conversationId)
+      if (conversation?.lastMessage?.id === data.messageId) {
+        updateConversationLastMessage(data.conversationId, {
+          ...conversation.lastMessage,
+          content: data.content
+        })
+      }
+    }
+
+    const handleMessageDeleted = (data: { conversationId: string; messageId: string }) => {
+      const currentMsgs = useChatStore.getState().messages[data.conversationId] || []
+      useChatStore.getState().setMessages(
+        data.conversationId,
+        currentMsgs.filter(m => m.id !== data.messageId)
+      )
+      chatApi.getConversations().then((convs: any[]) => setConversations(convs)).catch(() => {})
+    }
+
     const handleTypingStart = ({ conversationId }: { conversationId: string }) => setTyping(conversationId, true)
     const handleTypingStop = ({ conversationId }: { conversationId: string }) => setTyping(conversationId, false)
     const handleNotification = (notif: Notification) => addNotification(notif)
@@ -128,6 +149,8 @@ export default function SocketManager() {
 
     const unsubscribers = [
       on('new_message', handleNewMessage),
+      on('message_updated', handleMessageUpdated),
+      on('message_deleted', handleMessageDeleted),
       on('new_conversation', handleNewConversation),
       on('typing_start', handleTypingStart),
       on('typing_stop', handleTypingStop),
@@ -142,7 +165,7 @@ export default function SocketManager() {
     return () => {
       unsubscribers.forEach(unsub => unsub())
     }
-  }, [token, user, on, socket, addMessage, setTyping, updateConversationLastMessage, incrementUnread, setConversations, addNotification, setStatus, setMultipleStatuses, navigate])
+  }, [token, user, on, socket, addMessage, setTyping, updateConversationLastMessage, incrementUnread, setConversations, addNotification, setStatus, setMultipleStatuses, navigate, updateMessageText])
 
   return null
 }

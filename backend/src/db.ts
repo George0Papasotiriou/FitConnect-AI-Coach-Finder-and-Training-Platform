@@ -183,6 +183,7 @@ export async function initializeDatabase() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled INTEGER DEFAULT 0;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_skipped INTEGER DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE;
 
     -- Trainee profile extended fields
     ALTER TABLE trainee_profiles ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT '';

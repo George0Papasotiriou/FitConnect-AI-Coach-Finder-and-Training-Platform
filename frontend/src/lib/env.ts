@@ -1,0 +1,38 @@
+import { z } from "zod";
+
+const envSchema = z.object({
+  NEXT_PUBLIC_BACKEND_URL: z.string().url().default("http://localhost:8080"),
+  NEXT_PUBLIC_ENV: z.enum(["development", "production"]).default("development"),
+  NEXT_PUBLIC_LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
+  // Optional explicit override; if absent, useVoiceSession derives it
+  // from NEXT_PUBLIC_BACKEND_URL (https→wss, http→ws, append /ws/voice).
+  NEXT_PUBLIC_VOICE_WS_URL: z.string().url().optional(),
+});
+
+function parseEnv() {
+  const getEnv = (key: string) => {
+    if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key] !== undefined) {
+      return import.meta.env[key];
+    }
+    if (typeof process !== "undefined" && process.env && process.env[key] !== undefined) {
+      return process.env[key];
+    }
+    return undefined;
+  };
+
+  try {
+    const parsed = envSchema.parse({
+      NEXT_PUBLIC_BACKEND_URL: getEnv("NEXT_PUBLIC_BACKEND_URL"),
+      NEXT_PUBLIC_ENV: getEnv("NEXT_PUBLIC_ENV"),
+      NEXT_PUBLIC_LOG_LEVEL: getEnv("NEXT_PUBLIC_LOG_LEVEL"),
+      NEXT_PUBLIC_VOICE_WS_URL: getEnv("NEXT_PUBLIC_VOICE_WS_URL"),
+    });
+    console.info("[env] Validation passed");
+    return parsed;
+  } catch (err) {
+    console.error("[env] Validation FAILED", err);
+    throw err;
+  }
+}
+
+export const env = parseEnv();

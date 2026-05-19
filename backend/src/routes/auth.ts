@@ -24,8 +24,10 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import db from '../db.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { OAuth2Client } from 'google-auth-library';
 
 const router = Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'dummy_client_id');
 
 // Rate limiting for login attempts (in-memory)
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
@@ -128,6 +130,87 @@ router.post('/login', async (req, res: Response) => {
     });
   } catch (err) {
     console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── Google OAuth Login ──
+router.post('/google', async (req, res: Response) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: 'Google credential required' });
+
+    let payload;
+    try {
+      if (credential.split('.').length === 3) {
+        const ticket = await googleClient.verifyIdToken({
+          idToken: credential,
+          audience: process.env.GOOGLE_CLIENT_ID || 'dummy_client_id',
+        });
+        payload = ticket.getPayload();
+      } else {
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${credential}` }
+        });
+        if (!userInfoRes.ok) throw new Error('Failed to fetch user info');
+        payload = await userInfoRes.json();
+      }
+    } catch (verifyErr) {
+      console.error('Google token verification failed:', verifyErr);
+      if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID === 'dummy_client_id') {
+         // Mock verification for local development without a real Client ID
+         const decoded = jwt.decode(credential) as any;
+         if (decoded && decoded.email) {
+           payload = { email: decoded.email, sub: decoded.sub || 'mock_google_id', name: decoded.name || 'Google User', picture: decoded.picture };
+         } else {
+           return res.status(401).json({ message: 'Invalid Google credential and mock decoding failed' });
+         }
+      } else {
+        return res.status(401).json({ message: 'Invalid Google credential' });
+      }
+    }
+
+    if (!payload || !payload.email) return res.status(400).json({ message: 'Invalid Google payload' });
+
+    const email = payload.email;
+    const googleId = payload.sub;
+    const name = payload.name || 'Google User';
+    const avatar = payload.picture || null;
+
+    let user = await db.get('SELECT * FROM users WHERE google_id = ?', googleId);
+
+    if (!user) {
+      // Check if email exists
+      user = await db.get('SELECT * FROM users WHERE email = ?', email);
+      if (user) {
+        await db.run('UPDATE users SET google_id = ? WHERE id = ?', googleId, user.id);
+      } else {
+        const id = uuid();
+        const dummyPassword = await bcrypt.hash('google_auth_' + uuid(), 12);
+        await db.run('INSERT INTO users (id, name, email, password, role, avatar, google_id) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+                     id, name, email, dummyPassword, 'trainee', avatar, googleId);
+        await db.run('INSERT INTO trainee_profiles (id, user_id) VALUES (?, ?)', uuid(), id);
+        user = await db.get('SELECT * FROM users WHERE id = ?', id);
+      }
+    }
+
+    if (user.isBanned) return res.status(403).json({ message: 'Account is suspended' });
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: {
+        id: user.id, name: user.name, email: user.email, role: user.role,
+        avatar: user.avatar, xp: user.xp, level: user.level,
+        onboardingComplete: !!user.onboardingComplete,
+        twoFactorEnabled: !!user.twoFactorEnabled,
+        twoFactorSkipped: !!user.twoFactorSkipped
+      }
+    });
+
+  } catch (err) {
+    console.error('Google login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="#000">
+  <g transform="rotate(-22 50 50)">
+    <path d="M 10 50 Q 50 18, 90 50 Q 50 82, 10 50 Z"/>
+  </g>
+</svg>

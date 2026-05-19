@@ -17,6 +17,9 @@ import { Helmet } from 'react-helmet-async'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../store/authStore'
 import ForgotPasswordModal from '../../components/auth/ForgotPasswordModal'
+import TwoFactorWarningModal from '../../components/auth/TwoFactorWarningModal'
+import TwoFactorSetupModal from '../../components/auth/TwoFactorSetupModal'
+import { useGoogleLogin } from '@react-oauth/google'
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -123,6 +126,16 @@ export default function Login() {
   const [attempts, setAttempts] = useState(0)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [show2FAWarning, setShow2FAWarning] = useState(false)
+  const [show2FASetup, setShow2FASetup] = useState(false)
+  
+  const proceedToDashboard = () => {
+    const user = useAuthStore.getState().user
+    if (user?.role === 'trainer') navigate('/trainer/dashboard')
+    else if (user?.role === 'admin') navigate('/admin/dashboard')
+    else if (user?.onboardingComplete === false) navigate('/onboarding')
+    else navigate('/trainee/dashboard')
+  }
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema)
@@ -133,10 +146,11 @@ export default function Login() {
     try {
       await login(data.email, data.password)
       const user = useAuthStore.getState().user
-      if (user?.role === 'trainer') navigate('/trainer/dashboard')
-      else if (user?.role === 'admin') navigate('/admin/dashboard')
-      else if (user?.onboardingComplete === false) navigate('/onboarding')
-      else navigate('/trainee/dashboard')
+      if (user && !user.twoFactorEnabled) {
+        setShow2FAWarning(true)
+      } else {
+        proceedToDashboard()
+      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Invalid email or password'
       setLoginError(msg)
@@ -148,11 +162,26 @@ export default function Login() {
     }
   }
 
-  const handleGoogleLogin = () => {
-    toast.info("Google registration & login is currently in beta!", {
-      description: "Please continue logging in with your registered email and password."
-    })
-  }
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoginError(null);
+      try {
+        await useAuthStore.getState().loginWithGoogle(tokenResponse.access_token);
+        const user = useAuthStore.getState().user;
+        if (user && !user.twoFactorEnabled) {
+          setShow2FAWarning(true)
+        } else {
+          proceedToDashboard()
+        }
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'Google login failed';
+        setLoginError(msg);
+      }
+    },
+    onError: () => {
+      setLoginError('Google login failed or was cancelled');
+    }
+  });
 
   const errorInfo = loginError ? (ERROR_GUIDANCE[loginError] || {
     icon: <AlertTriangle size={18} className="text-red-400" />,
@@ -363,6 +392,27 @@ export default function Login() {
       <ForgotPasswordModal
         isOpen={showForgotPassword}
         onClose={() => setShowForgotPassword(false)}
+      />
+
+      {show2FAWarning && (
+        <TwoFactorWarningModal
+          onSetupNow={() => {
+            setShow2FAWarning(false)
+            setShow2FASetup(true)
+          }}
+          onSkip={() => {
+            setShow2FAWarning(false)
+            proceedToDashboard()
+          }}
+        />
+      )}
+
+      <TwoFactorSetupModal
+        isOpen={show2FASetup}
+        onClose={() => {
+          setShow2FASetup(false)
+          proceedToDashboard()
+        }}
       />
     </>
   )

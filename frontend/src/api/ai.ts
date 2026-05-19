@@ -11,6 +11,7 @@ import apiClient from './client'
 export interface VoiceAIRequest {
   transcript: string
   context?: string
+  history?: ChatMessage[]
 }
 
 export interface VoiceAIResponse {
@@ -77,4 +78,7 @@ export const aiApi = {
 
   coachMatch: (data: { goals?: string[]; fitnessLevel?: string; preferences?: string }) =>
     apiClient.post<{ recommendation: string }>('/ai/coach-match', data).then(r => r.data),
+
+  sendEmailReport: (data: { email: string; chartsCount: number; narrative: string; pdfDataUri: string }) =>
+    apiClient.post<{ success: boolean; message: string; deliveryId: string }>('/ai/email-report', data).then(r => r.data),
 }

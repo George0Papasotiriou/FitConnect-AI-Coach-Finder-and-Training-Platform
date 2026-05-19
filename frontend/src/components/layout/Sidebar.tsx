@@ -74,7 +74,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       aria-label="Main navigation"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[var(--glass-border)] h-16 flex-shrink-0">
+      <div className={`flex items-center justify-between border-b border-[var(--glass-border)] h-16 flex-shrink-0 ${collapsed ? 'px-3 py-4' : 'p-4'}`}>
         <AnimatePresence>
           {!collapsed && (
             <motion.div
@@ -83,7 +83,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               exit={{ opacity: 0, x: -10 }}
               className="flex items-center gap-2.5"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-xl flex items-center justify-center shadow-lg shadow-accent-purple/20">
+              <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-accent-purple to-accent-teal rounded-xl flex items-center justify-center shadow-lg shadow-accent-purple/20">
                 <Zap size={14} className="text-white" />
               </div>
               <span className="font-black text-lg gradient-text">AbiliFit</span>
@@ -91,7 +91,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           )}
         </AnimatePresence>
         {collapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-accent-purple to-accent-teal rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-accent-purple/20">
+          <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-accent-purple to-accent-teal rounded-xl flex items-center justify-center shadow-lg shadow-accent-purple/20">
             <Zap size={14} className="text-white" />
           </div>
         )}

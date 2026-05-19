@@ -28,6 +28,8 @@ import { fileURLToPath } from 'url';
 
 import { initializeDatabase } from './db.js';
 import { initializeSocket } from './socket/index.js';
+import { initializeVoiceSocket } from './socket/voice.js';
+
 import authRoutes from './routes/auth.js';
 import traineeRoutes from './routes/trainee.js';
 import trainerPublicRoutes, { trainerRouter } from './routes/trainer.js';
@@ -43,6 +45,7 @@ import billingRoutes from './routes/billing.js';
 import strengthRoutes from './routes/strength.js';
 import bountyRoutes from './routes/bounties.js';
 import exerciseRoutes from './routes/exercises.js';
+import analyticsRoutes from './routes/analytics.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -154,6 +157,7 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/strength', strengthRoutes);
 app.use('/api/bounties', bountyRoutes);
 app.use('/api/exercises', exerciseRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 
 // 2. STATIC ASSETS
@@ -196,6 +200,8 @@ import { seed } from './seed.js';
     }
     
     initializeSocket(io);
+    initializeVoiceSocket(server);
+
     
     // Switch back to 0.0.0.0 as some Railway nodes are IPv4-exclusive
     server.listen(PORT, '0.0.0.0', () => {

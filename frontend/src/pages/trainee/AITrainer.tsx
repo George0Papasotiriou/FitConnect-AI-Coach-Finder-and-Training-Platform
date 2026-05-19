@@ -17,6 +17,7 @@ import { aiApi, ChatMessage } from '../../api/ai'
 import StrengthCalculator from '../../components/ai/StrengthCalculator'
 import WorkoutTimer from '../../components/chat/WorkoutTimer'
 import { toast } from 'sonner'
+import { subscribeVoiceAction } from '../../lib/voiceActionBus'
 
 interface UIMessage {
   id: string
@@ -91,6 +92,19 @@ function ChatWindow({ chat, setChats, containerRef, bringToFront, highestZ, isSi
     el.addEventListener('scroll', h)
     return () => el.removeEventListener('scroll', h)
   }, [])
+
+  // Voice-driven auto-send: when the parent flips `_voiceAutoSend` to a
+  // fresh timestamp AND has put the text in chat.input, we send it.
+  const lastVoiceSendRef = useRef<number>(0)
+  useEffect(() => {
+    const ts = (chat as any)._voiceAutoSend as number | undefined
+    if (!ts || ts === lastVoiceSendRef.current) return
+    const text = (chat.input as string)?.trim()
+    if (!text) return
+    lastVoiceSendRef.current = ts
+    void sendMessage(text)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat])
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || chat.isLoading) return
@@ -228,11 +242,38 @@ export default function AITrainer() {
     }
   ])
   const [highestZ, setHighestZ] = useState(10)
-  
+
   const [showStrengthCalc, setShowStrengthCalc] = useState(false)
   const [showTimer, setShowTimer] = useState(false)
-  
+
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Voice integration: react to ai_chat_send / start_timer.
+  // Voice can also "press Workout Plan" via the global click handler.
+  useEffect(() => {
+    const off = subscribeVoiceAction((action) => {
+      if (action.type === 'start_timer' && typeof action.payload === 'number') {
+        setShowTimer(true)
+        return
+      }
+      if (action.type === 'ai_chat_send' && typeof action.payload === 'string') {
+        // Drop the message into the most-recently-focused (highest-z) chat
+        // and let its existing send loop pick it up.
+        const text = action.payload.trim()
+        if (!text) return
+        setChats((prev) => {
+          if (prev.length === 0) return prev
+          const target = [...prev].sort((a, b) => b.zIndex - a.zIndex)[0]
+          return prev.map((c) =>
+            c.id === target.id
+              ? { ...c, input: text, _voiceAutoSend: Date.now() } as any
+              : c,
+          )
+        })
+      }
+    })
+    return off
+  }, [])
 
   const bringToFront = (id: string) => {
     setHighestZ(prev => prev + 1)

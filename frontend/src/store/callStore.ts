@@ -15,16 +15,33 @@ interface CallState {
     trainerName: string
     isAdhoc?: boolean
   } | null
+  ratingSession: {
+    sessionId: string
+    trainerName: string
+  } | null
   isMinimized: boolean
   setActiveCall: (call: CallState['activeCall']) => void
   setMinimized: (minimized: boolean) => void
+  setRatingSession: (session: CallState['ratingSession']) => void
   endCall: () => void
 }
 
 export const useCallStore = create<CallState>((set) => ({
   activeCall: null,
+  ratingSession: null,
   isMinimized: false,
   setActiveCall: (call) => set({ activeCall: call, isMinimized: false }),
   setMinimized: (isMinimized) => set({ isMinimized }),
-  endCall: () => set({ activeCall: null, isMinimized: false }),
+  setRatingSession: (ratingSession) => set({ ratingSession }),
+  endCall: () => set((state) => {
+    const ratingSession = state.activeCall ? {
+      sessionId: state.activeCall.sessionId,
+      trainerName: state.activeCall.trainerName
+    } : null;
+    return {
+      activeCall: null,
+      isMinimized: false,
+      ratingSession
+    };
+  }),
 }))

@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, Moon, Volume2, Eye, Type, Bell, Shield, LogOut, Camera, User as UserIcon, Heart, Activity } from 'lucide-react'
+import { Settings as SettingsIcon, Moon, Volume2, Eye, Type, Bell, Shield, LogOut, Camera, User as UserIcon, Heart, Activity, ShieldCheck, ShieldAlert } from 'lucide-react'
 import apiClient from '../../api/client'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
@@ -17,6 +17,7 @@ import Avatar from '../../components/common/Avatar'
 import { useAuthStore } from '../../store/authStore'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import TwoFactorSetupModal from '../../components/auth/TwoFactorSetupModal'
 
 export default function Settings() {
   const navigate = useNavigate()
@@ -31,6 +32,7 @@ export default function Settings() {
     wearableConnected: localStorage.getItem('fc_wearable') === 'true',
   })
   const [syncing, setSyncing] = useState(false)
+  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
 
   const updateSetting = (key: string, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }))
@@ -197,10 +199,23 @@ export default function Settings() {
             <div className="flex items-center justify-between p-3 bg-bg-primary rounded-xl">
               <div><p className="text-sm font-medium text-text-primary">Role</p><p className="text-xs text-text-secondary capitalize">{user?.role}</p></div>
             </div>
+            <div className="flex items-center justify-between p-3 bg-bg-primary rounded-xl">
+              <div>
+                <p className="text-sm font-medium text-text-primary flex items-center gap-1">
+                  Two-Factor Auth 
+                  {user?.twoFactorEnabled ? <ShieldCheck size={14} className="text-accent-teal" /> : <ShieldAlert size={14} className="text-accent-orange" />}
+                </p>
+                <p className="text-xs text-text-secondary">{user?.twoFactorEnabled ? 'Enabled & securing account' : 'Not enabled'}</p>
+              </div>
+              {!user?.twoFactorEnabled && (
+                <Button size="sm" onClick={() => setIs2FAModalOpen(true)}>Enable</Button>
+              )}
+            </div>
             <Button variant="ghost" fullWidth onClick={handleLogout} leftIcon={<LogOut size={16} />} className="!text-red-400 hover:!bg-red-400/10">Sign Out</Button>
           </div>
         </Card>
       </div>
+      <TwoFactorSetupModal isOpen={is2FAModalOpen} onClose={() => setIs2FAModalOpen(false)} />
     </>
   )
 }
