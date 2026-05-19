@@ -17,8 +17,6 @@ import { Helmet } from 'react-helmet-async'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../store/authStore'
 import ForgotPasswordModal from '../../components/auth/ForgotPasswordModal'
-import TwoFactorWarningModal from '../../components/auth/TwoFactorWarningModal'
-import TwoFactorSetupModal from '../../components/auth/TwoFactorSetupModal'
 import { useGoogleLogin } from '@react-oauth/google'
 
 const schema = z.object({
@@ -126,9 +124,7 @@ export default function Login() {
   const [attempts, setAttempts] = useState(0)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [show2FAWarning, setShow2FAWarning] = useState(false)
-  const [show2FASetup, setShow2FASetup] = useState(false)
-  
+
   const proceedToDashboard = () => {
     const user = useAuthStore.getState().user
     if (user?.role === 'trainer') navigate('/trainer/dashboard')
@@ -145,17 +141,12 @@ export default function Login() {
     setLoginError(null)
     try {
       await login(data.email, data.password)
-      const user = useAuthStore.getState().user
-      if (user && !user.twoFactorEnabled) {
-        setShow2FAWarning(true)
-      } else {
-        proceedToDashboard()
-      }
+      proceedToDashboard()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Invalid email or password'
       setLoginError(msg)
       setAttempts(prev => prev + 1)
-      
+
       if (attempts >= 2) {
         toast.error('Multiple failed attempts. Consider resetting your password.', { duration: 5000 })
       }
@@ -167,12 +158,7 @@ export default function Login() {
       setLoginError(null);
       try {
         await useAuthStore.getState().loginWithGoogle(tokenResponse.access_token);
-        const user = useAuthStore.getState().user;
-        if (user && !user.twoFactorEnabled) {
-          setShow2FAWarning(true)
-        } else {
-          proceedToDashboard()
-        }
+        proceedToDashboard()
       } catch (err: any) {
         const msg = err?.response?.data?.message || 'Google login failed';
         setLoginError(msg);
@@ -346,7 +332,7 @@ export default function Login() {
             {/* Google Sign In */}
             <button
               type="button"
-              onClick={handleGoogleLogin}
+              onClick={() => handleGoogleLogin()}
               className="animate-element animate-delay-900 w-full flex items-center justify-center gap-3 border border-slate-200/80 bg-white hover:bg-slate-50 rounded-[1.25rem] py-4 text-slate-700 text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer"
             >
               <GoogleIcon />
@@ -392,27 +378,6 @@ export default function Login() {
       <ForgotPasswordModal
         isOpen={showForgotPassword}
         onClose={() => setShowForgotPassword(false)}
-      />
-
-      {show2FAWarning && (
-        <TwoFactorWarningModal
-          onSetupNow={() => {
-            setShow2FAWarning(false)
-            setShow2FASetup(true)
-          }}
-          onSkip={() => {
-            setShow2FAWarning(false)
-            proceedToDashboard()
-          }}
-        />
-      )}
-
-      <TwoFactorSetupModal
-        isOpen={show2FASetup}
-        onClose={() => {
-          setShow2FASetup(false)
-          proceedToDashboard()
-        }}
       />
     </>
   )

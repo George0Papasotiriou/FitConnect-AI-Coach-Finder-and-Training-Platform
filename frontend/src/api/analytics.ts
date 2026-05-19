@@ -49,6 +49,7 @@ export interface AnalyticsResponse {
   explanation: string
   followUpSuggestions: string[]
   clarificationQuestion?: string
+  chat_response?: string
   metadata: {
     latencyMs: number
     sqlRetries: number

@@ -6,6 +6,7 @@
  * Unauthorized copying, modification, or distribution is strictly prohibited.
  */
 
+import { useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import AppShell from './components/layout/AppShell'
@@ -78,19 +79,28 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 import TwoFactorSetup from './components/auth/TwoFactorSetup'
 import { authApi } from './api/auth'
 
+const DISMISSED_KEY = '2fa_dismissed_at'
+const DISMISS_TTL_MS = 24 * 60 * 60 * 1000
+
+function isDismissedRecently(): boolean {
+  const ts = localStorage.getItem(DISMISSED_KEY)
+  if (!ts) return false
+  return Date.now() - parseInt(ts, 10) < DISMISS_TTL_MS
+}
+
 export default function App() {
   const { user, token, setUser } = useAuthStore()
-  const show2FA = !!(token && user && !user.twoFactorEnabled && !user.twoFactorSkipped)
+  const [dismissed2FA, setDismissed2FA] = useState(isDismissedRecently)
+  const show2FA = !!(token && user && !user.twoFactorEnabled && !dismissed2FA)
 
   const handle2FAComplete = () => {
     if (user) setUser({ ...user, twoFactorEnabled: true })
+    localStorage.removeItem(DISMISSED_KEY)
   }
 
-  const handle2FASkip = async () => {
-    try {
-      await authApi.skip2FA()
-      if (user) setUser({ ...user, twoFactorSkipped: true })
-    } catch {}
+  const handle2FASkip = () => {
+    localStorage.setItem(DISMISSED_KEY, Date.now().toString())
+    setDismissed2FA(true)
   }
 
   return (

@@ -78,6 +78,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: () => {
     set({ user: null, token: null })
     localStorage.removeItem('auth-storage')
+    localStorage.removeItem('2fa_dismissed_at')
   },
 
   setUser: (user) => {
