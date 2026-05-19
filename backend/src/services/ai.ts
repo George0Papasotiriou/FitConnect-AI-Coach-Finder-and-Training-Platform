@@ -21,10 +21,19 @@ import OpenAI from 'openai';
 const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 const FALLBACK_MODELS = ['openai/gpt-4o-mini', 'anthropic/claude-3-haiku', 'mistralai/mistral-7b-instruct'];
 
-function makeClient(apiKey: string) {
+// 30-second timeout so requests never hang indefinitely
+const CLIENT_TIMEOUT_MS = 30_000;
+
+function maskKey(key: string): string {
+  if (!key || key.length < 8) return '(empty)';
+  return `${key.slice(0, 6)}...${key.slice(-4)}`;
+}
+
+function makeOpenRouterClient(apiKey: string): OpenAI {
   return new OpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey,
+    timeout: CLIENT_TIMEOUT_MS,
     defaultHeaders: {
       'HTTP-Referer': 'https://fitconnect.app',
       'X-Title': 'AbiliFit',
@@ -32,29 +41,44 @@ function makeClient(apiKey: string) {
   });
 }
 
-const primaryClient = makeClient(process.env.OPENROUTER_API_KEY || '');
-const fallbackClient = makeClient(process.env.OPENROUTER_API_KEY_FALLBACK || process.env.OPENROUTER_API_KEY || '');
+// ── Startup validation ────────────────────────────────────────────────────────
+const primaryKey = process.env.OPENROUTER_API_KEY || '';
+const fallbackKey = process.env.OPENROUTER_API_KEY_FALLBACK || '';
 
-function makeGeminiClient(apiKey: string) {
-  return new OpenAI({
-    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-    apiKey,
+if (!primaryKey) {
+  console.warn('⚠️  [AI] OPENROUTER_API_KEY is not set — AI features will not work!');
+} else {
+  console.log(`✅ [AI] Primary key loaded: ${maskKey(primaryKey)}`);
+}
+if (fallbackKey && fallbackKey !== primaryKey) {
+  console.log(`✅ [AI] Fallback key loaded: ${maskKey(fallbackKey)}`);
+}
+
+// ── Clients — only instantiate keys that are actually configured ──────────────
+const primaryClient = makeOpenRouterClient(primaryKey);
+
+// Build the ordered list of {client, models} pairs.
+// Only include a fallback entry when its key is set AND differs from the primary
+// so we don't waste time retrying the same key twice.
+const fallbackKeysAndModels: { client: OpenAI; models: string[] }[] = [
+  { client: primaryClient, models: [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)] },
+];
+
+if (fallbackKey && fallbackKey !== primaryKey) {
+  fallbackKeysAndModels.push({
+    client: makeOpenRouterClient(fallbackKey),
+    models: [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)],
   });
 }
 
-const fallbackKeysAndModels = [
-  { client: primaryClient, models: [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)] },
-  { client: fallbackClient, models: [MODEL, ...FALLBACK_MODELS.filter(m => m !== MODEL)] },
-  ...(process.env.GEMINI_API_KEY_FALLBACK ? [{ client: makeGeminiClient(process.env.GEMINI_API_KEY_FALLBACK), models: ['gemini-2.5-flash', 'gemini-1.5-flash'] }] : []),
-  ...(process.env.NVIDIA_API_KEY_FALLBACK ? [{ client: makeClient(process.env.NVIDIA_API_KEY_FALLBACK), models: ['nvidia/llama-3.1-nemotron-70b-instruct', 'nvidia/nemotron-4-340b-instruct'] }] : []),
-  ...(process.env.OPENAI_API_KEY_FALLBACK ? [{ client: makeClient(process.env.OPENAI_API_KEY_FALLBACK), models: ['openai/chatgpt-4o-latest', 'openai/gpt-4o-mini'] }] : []),
-  ...(process.env.ZAI_API_KEY_FALLBACK ? [{ client: makeClient(process.env.ZAI_API_KEY_FALLBACK), models: ['zhipu/glm-4'] }] : []),
-  ...(process.env.MINIMAX_API_KEY_FALLBACK ? [{ client: makeClient(process.env.MINIMAX_API_KEY_FALLBACK), models: ['minimax/minimax-abab6.5'] }] : []),
-  ...(process.env.DEEPSEEK_API_KEY_FALLBACK ? [{ client: makeClient(process.env.DEEPSEEK_API_KEY_FALLBACK), models: ['deepseek/deepseek-chat'] }] : []),
-];
+// NOTE: Gemini requires the @google/generative-ai SDK, not the OpenAI SDK.
+// NVIDIA / ZAI / MiniMax / DeepSeek fallbacks are intentionally omitted here
+// because those keys are not configured in Railway. Add them back only when
+// the corresponding env vars are confirmed to be set.
 
 export const exportedClientsForVision = fallbackKeysAndModels; // For analyzeFormImages
 
+// ── Core AI caller ────────────────────────────────────────────────────────────
 async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Promise<string> {
   for (const fallback of fallbackKeysAndModels) {
     for (const model of fallback.models) {
@@ -68,9 +92,23 @@ async function callAI(messages: any[], maxTokens = 400, temperature = 0.7): Prom
         const content = completion.choices[0]?.message?.content;
         if (content) return content;
       } catch (err: any) {
-        const msg = err?.message || '';
-        const isFatal = msg.includes('invalid_api_key') || msg.includes('Unauthorized');
-        if (isFatal) break;
+        const msg: string = err?.message || '';
+        const status: number | undefined = err?.status;
+
+        // Timeout — log and bail out of this key entirely
+        if (err?.name === 'APIConnectionTimeoutError' || msg.includes('timed out') || msg.includes('timeout')) {
+          console.error(`[AI] Request timed out (model=${model}, timeout=${CLIENT_TIMEOUT_MS}ms)`);
+          break; // try next key, not next model on the same key
+        }
+
+        // Auth failure — this key is dead, skip remaining models for it
+        if (status === 401 || msg.includes('invalid_api_key') || msg.includes('Unauthorized')) {
+          console.error(`[AI] Auth failure for model=${model} — skipping key`);
+          break;
+        }
+
+        // Rate-limited or server error — log and try next model
+        console.warn(`[AI] Model ${model} failed (status=${status ?? 'unknown'}): ${msg.slice(0, 120)}`);
         continue;
       }
     }
@@ -247,9 +285,17 @@ Do not output markdown code blocks. Just the raw JSON string.`
           
           return JSON.parse(cleaned);
         } catch (e: any) {
-          const msg = e?.message || '';
-          if (msg.includes('invalid_api_key') || msg.includes('Unauthorized')) break;
-          // Silently continue to fallback model
+          const msg: string = e?.message || '';
+          const status: number | undefined = e?.status;
+          if (e?.name === 'APIConnectionTimeoutError' || msg.includes('timed out') || msg.includes('timeout')) {
+            console.error(`[AI:vision] Request timed out (model=${model})`);
+            break;
+          }
+          if (status === 401 || msg.includes('invalid_api_key') || msg.includes('Unauthorized')) {
+            console.error(`[AI:vision] Auth failure for model=${model} — skipping key`);
+            break;
+          }
+          console.warn(`[AI:vision] Model ${model} failed (status=${status ?? 'unknown'}): ${msg.slice(0, 120)}`);
           continue;
         }
       }
